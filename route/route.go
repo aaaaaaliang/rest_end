@@ -1,124 +1,120 @@
 package route
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"rest/api/banner"
+	"rest/api/cart"
 	"rest/api/category"
+	"rest/api/dashboard"
+	"rest/api/order"
+	"rest/api/product"
+	"rest/api/public"
+	"rest/api/role"
+	"rest/api/salary"
 	"rest/api/user"
+	"rest/config"
+	"rest/model"
+	"strings"
 )
 
-//// Route 存储 API 路由信息
-//type Route struct {
-//	Path    string        // API 路径
-//	Method  string        // HTTP 方法（GET, POST, PUT, DELETE）
-//	Handler reflect.Value // 处理函数（反射调用）
-//}
-//
-//// Routes 存储所有自动注册的路由
-//var Routes []Route
-//
-//// Register **支持 API 直接注册，自动解析 HTTP 方法**
-//func Register(apis ...interface{}) {
-//	for _, api := range apis {
-//		registerAPI(api)
-//	}
-//}
-//
-//// registerAPI 解析 API 方法，并自动注册 RESTful 路由
-//func registerAPI(api interface{}) {
-//	apiType := reflect.TypeOf(api)
-//	module := strings.ToLower(apiType.Name()) // 取 API 结构体名称（小写）
-//
-//	apiValue := reflect.ValueOf(api)
-//
-//	// 遍历 API 结构体的方法
-//	for i := 0; i < apiValue.NumMethod(); i++ {
-//		method := apiValue.Method(i)         // 获取方法
-//		methodName := apiType.Method(i).Name // 获取方法名
-//
-//		// **通过方法名前缀确定 HTTP 方法**
-//		httpMethod := getHTTPMethodFromPrefix(methodName)
-//		if httpMethod == "" {
-//			continue // 非 RESTful 方法，跳过
-//		}
-//
-//		// **自动生成 RESTful API 路径**
-//		path := generateRoutePath(methodName, module)
-//
-//		// 存储路由信息
-//		route := Route{
-//			Path:    path,
-//			Method:  httpMethod,
-//			Handler: method,
-//		}
-//		Routes = append(Routes, route)
-//
-//		fmt.Printf("✔️  注册路由: %s %s\n", httpMethod, path)
-//	}
-//}
-//
-//// getHTTPMethodFromPrefix **根据方法前缀解析 HTTP 方法**
-//func getHTTPMethodFromPrefix(methodName string) string {
-//	lowerMethod := strings.ToLower(methodName)
-//
-//	switch {
-//	case strings.HasPrefix(lowerMethod, "get"):
-//		return "GET"
-//	case strings.HasPrefix(lowerMethod, "post"):
-//		return "POST"
-//	case strings.HasPrefix(lowerMethod, "put"):
-//		return "PUT"
-//	case strings.HasPrefix(lowerMethod, "delete"):
-//		return "DELETE"
-//	default:
-//		return "" // 不符合 RESTful 规则
-//	}
-//}
-//
-//// generateRoutePath **根据方法名自动生成 RESTful 路径**
-//func generateRoutePath(methodName, module string) string {
-//	lowerMethod := strings.ToLower(methodName)
-//
-//	if strings.Contains(lowerMethod, "byid") {
-//		return fmt.Sprintf("/%s/:id", module) // `GetUserByID` -> `/user/:id`
-//	}
-//
-//	return fmt.Sprintf("/%s", module) // `GetUsers` -> `/users`
-//}
-//
-//// Bind **绑定所有注册的路由到 Gin**
-//func Bind(e *gin.Engine) {
-//	for _, route := range Routes {
-//		// 绑定 API 处理函数
-//		switch route.Method {
-//		case "GET":
-//			e.GET(route.Path, match(route.Handler))
-//		case "POST":
-//			e.POST(route.Path, match(route.Handler))
-//		case "PUT":
-//			e.PUT(route.Path, match(route.Handler))
-//		case "DELETE":
-//			e.DELETE(route.Path, match(route.Handler))
-//		}
-//	}
-//}
-//
-//// match **调用 API 处理函数**
-//func match(handler reflect.Value) gin.HandlerFunc {
-//	return func(c *gin.Context) {
-//		args := []reflect.Value{reflect.ValueOf(c)} // 传递 *gin.Context
-//		handler.Call(args)                          // 反射调用 API 方法
-//	}
-//}
-
-// RegisterRoutes **统一注册所有 API 路由**
-func RegisterRoutes(r *gin.Engine) {
+// **统一注册所有 API 路由**
+func registerRoutes(r *gin.Engine) {
 	apiGroup := r.Group("/api") // 统一 API 前缀
 
 	// 注册用户 API
 	user.RegisterUserRoutes(apiGroup)
 	category.RegisterCategoryRoutes(apiGroup)
+	public.RegisterPublicRoutes(apiGroup)
+	product.RegisterProductRoutes(apiGroup)
+	cart.RegisterCartRoutes(apiGroup)
+	order.RegisterOrderRoutes(apiGroup)
+	banner.RegisterBannerRoutes(apiGroup)
+	role.RegisterRoleRoutes(apiGroup)
+	salary.RegisterSalaryRoutes(apiGroup)
+	dashboard.RegisterDashboardRoutes(apiGroup)
+}
 
-	//	// 注册订单 API
-	//	api.RegisterOrderRoutes(apiGroup)
-	//}
+func autoRegisterAPIPermissions(router *gin.Engine) {
+	routes := router.Routes()
+	var permissions []model.APIPermission
+	parentMap := make(map[string]string)
+
+	for _, route := range routes {
+		if strings.HasPrefix(route.Path, "/debug") || strings.Contains(route.Handler, "gin.") {
+			continue
+		}
+
+		// 获取顶级分类（如 `/api/user` => `user`）
+		pathParts := strings.Split(strings.Trim(route.Path, "/"), "/")
+		if len(pathParts) < 2 {
+			continue
+		}
+
+		topLevelCode := generateCode(pathParts[1], "")
+		if _, exists := parentMap[topLevelCode]; !exists {
+			parentMap[topLevelCode] = topLevelCode
+			permissions = append(permissions, model.APIPermission{
+				BasicModel:  model.BasicModel{Code: topLevelCode},
+				Name:        strings.Title(pathParts[1]) + " 管理",
+				ParentCode:  nil,
+				Method:      nil,
+				Path:        nil,
+				Description: fmt.Sprintf("%s 模块权限", strings.Title(pathParts[1])),
+			})
+		}
+
+		// **提取处理函数名称（方法名）**
+		methodName := extractMethodName(route.Handler)
+
+		routeCode := generateCode(route.Path, route.Method)
+		permission := model.APIPermission{
+			BasicModel:  model.BasicModel{Code: routeCode},
+			Name:        fmt.Sprintf("%s - %s", strings.Title(pathParts[1]), strings.ToUpper(route.Method)),
+			Method:      &route.Method,
+			Path:        &route.Path,
+			ParentCode:  &topLevelCode,
+			Description: fmt.Sprintf("处理函数: %s", methodName), // 将方法名加入 description
+		}
+
+		permissions = append(permissions, permission)
+	}
+
+	// 存入数据库（存在就更新）
+	for _, perm := range permissions {
+		exist, _ := config.DB.Where("code = ?", perm.Code).Exist(&model.APIPermission{})
+		if exist {
+			_, err := config.DB.Where("code = ?", perm.Code).Update(&perm)
+			if err != nil {
+				fmt.Printf("⚠️ 更新权限失败: %v\n", err)
+			}
+		} else {
+			_, err := config.DB.Insert(&perm)
+			if err != nil {
+				fmt.Printf("⚠️ 插入权限失败: %v\n", err)
+			}
+		}
+	}
+
+	fmt.Println("✅ API 权限自动注册完成！")
+}
+
+// 生成 `code`
+func generateCode(path, method string) string {
+	path = strings.ReplaceAll(path, "/", "_")
+	path = strings.Trim(path, "_")
+	if method == "" {
+		return path
+	}
+	return fmt.Sprintf("%s_%s", path, strings.ToLower(method))
+}
+
+// **提取方法名**
+func extractMethodName(handler string) string {
+	// Gin 的 handler 形如 "rest/api/user.createUser"
+	parts := strings.Split(handler, ".")
+	if len(parts) > 1 {
+		return parts[len(parts)-1] // 取最后一部分，即方法名
+	}
+	return handler // 兜底返回完整的 handler 名
 }

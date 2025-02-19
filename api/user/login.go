@@ -1,0 +1,63 @@
+package user
+
+import (
+	"errors"
+	"github.com/gin-gonic/gin"
+	"github.com/mojocn/base64Captcha"
+	"rest/config"
+	"rest/model"
+	"rest/response"
+	"rest/utils"
+)
+
+func login(c *gin.Context) {
+	type Req struct {
+		Username        string `json:"username" binding:"required"`
+		Password        string `json:"password" binding:"required"`
+		CaptchaID       string `json:"captcha_id" binding:"required"`
+		CaptchaSolution string `json:"captcha" binding:"required"`
+	}
+
+	var req Req
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Success(c, response.BadRequest, err)
+		return
+	}
+
+	// 使用 base64Captcha 默认存储进行验证码验证
+	if !base64Captcha.DefaultMemStore.Verify(req.CaptchaID, req.CaptchaSolution, true) {
+		response.Success(c, response.BadRequest, errors.New("验证码错误"))
+		return
+	}
+
+	// 查询用户
+	var user model.Users
+	has, err := config.DB.Table(model.Users{}).Where("username = ?", req.Username).Get(&user)
+	if err != nil {
+		response.Success(c, response.ServerError, err)
+		return
+	}
+	if !has {
+		response.Success(c, response.Unauthorized, errors.New("用户名或密码错误"))
+		return
+	}
+
+	// 校验密码
+	if !utils.CheckPassword(req.Password, user.Password) {
+		response.Success(c, response.Unauthorized, errors.New("用户名或密码错误"))
+		return
+	}
+
+	// 生成 JWT Token
+	token, err := config.GenerateJWT(user.Code)
+	if err != nil {
+		response.Success(c, response.ServerError, errors.New("生成 Token 失败"))
+		return
+	}
+
+	// 设置 Cookie
+	c.SetCookie("access_token", token, 3600, "/", "", false, true)
+
+	// 登录成功
+	response.Success(c, response.SuccessCode)
+}

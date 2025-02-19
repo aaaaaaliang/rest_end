@@ -7,4 +7,5 @@ type AppConfig struct {
 	Port  int    `mapstructure:"port"`
 	Env   string `mapstructure:"env"`
 	Debug bool   `mapstructure:"debug"`
+	Front string `mapstructure:"front"`
 }

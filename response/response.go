@@ -39,7 +39,7 @@ const (
 
 // **✅ 4. 状态码消息映射**
 var messages = map[int]string{
-	Success:      "操作成功",
+	SuccessCode:  "操作成功",
 	BadRequest:   "参数错误",
 	Unauthorized: "未授权",
 	Forbidden:    "禁止访问",
@@ -120,17 +120,6 @@ func SuccessWithTotal(c *gin.Context, code int, data interface{}, total int, err
 		Total:     &total,
 		RequestID: getRequestID(c),
 		Err:       errMsg,
-	})
-}
-
-// **✅ 9. 失败返回**
-func Resp(c *gin.Context, code int, err error) {
-	errMsg := err.Error()
-	c.JSON(http.StatusBadRequest, Response{
-		Code:      code,
-		Message:   getMessage(code),
-		RequestID: getRequestID(c),
-		Err:       &errMsg,
 	})
 }
 

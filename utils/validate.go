@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"rest/response"
@@ -16,12 +17,12 @@ func ValidationQuery(c *gin.Context, d any) (success bool) {
 		return
 	}
 	if err != nil && strings.Contains(err.Error(), "validation") {
-		response.Resp(c, response.BadRequest, err)
+		response.Success(c, response.BadRequest, err)
 		success = false
 		return
 	}
 	if err != nil {
-		response.Resp(c, response.BadRequest, err)
+		response.Success(c, response.BadRequest, err)
 		success = false
 		return
 	}
@@ -31,26 +32,34 @@ func ValidationQuery(c *gin.Context, d any) (success bool) {
 
 // ValidationJson 校验 JSON 数据
 func ValidationJson(c *gin.Context, d any) (success bool) {
+	// 先检查请求体是否为空
+	if c.Request.Body == nil {
+		response.Success(c, response.BadRequest, errors.New("请求体为空"))
+		success = false
+		return
+	}
+
 	err := c.ShouldBindJSON(d)
 	fmt.Println("1") // 调试信息
 	if err != nil && strings.Contains(err.Error(), "required") {
-		response.Resp(c, response.NotFound, err)
+		response.Success(c, response.NotFound, err)
 		success = false
 		return
 	}
 	fmt.Println("2") // 调试信息
 	if err != nil && strings.Contains(err.Error(), "validation") {
-		response.Resp(c, response.BadRequest, err)
+		response.Success(c, response.BadRequest, err)
 		success = false
 		return
 	}
 	fmt.Println("3") // 调试信息
 	if err != nil {
 		fmt.Println("err:", err)
-		response.Resp(c, response.BadRequest, err)
+		response.Success(c, response.BadRequest, err)
 		success = false
 		return
 	}
+
 	success = true
 	return
 }

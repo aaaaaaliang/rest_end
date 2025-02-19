@@ -13,12 +13,12 @@ import (
 // 删除分类及其所有子分类（包括子孙分类）
 func deleteCategory(c *gin.Context) {
 	type Req struct {
-		Code string `json:"code" binding:"required,max=70"`
+		Code string `json:"code" binding:"required,max=70" form:"code"`
 	}
 
 	var req Req
 	if err := c.ShouldBindQuery(&req); err != nil {
-		response.Success(c, response.BadRequestCode, errors.New("参数错误"))
+		response.Success(c, response.BadRequest, fmt.Errorf("%v \"参数错误\"", err))
 		return
 	}
 

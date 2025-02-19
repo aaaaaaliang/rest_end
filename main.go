@@ -1,10 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/xormplus/xorm"
 	"log"
 	"rest/config"
 	"rest/model"
@@ -16,22 +13,29 @@ func main() {
 	config.LoadConfig()
 	// **初始化配置**
 	config.InitConfig()
+	config.InitJWT()
 
+	// **创建数据库表**
 	if err := config.CreateTables(
 		&model.Category{},
+		&model.Users{},
+		&model.Products{},
+		&model.UserCart{},
+		&model.UserOrder{},
+		&model.Banner{},
+		&model.APIPermission{},
+		&model.Role{},
+		&model.RolePermission{},
+		&model.UserRole{},
+		&model.SalaryRecord{},
+		&model.ChatMessage{},
 	); err != nil {
 		log.Fatal(err)
 	}
 
-	// **创建 Gin 实例**
-	r := gin.Default()
+	// **初始化 Gin 服务器**
+	r := route.InitServer()
 
-	// **注册路由**
-	route.RegisterRoutes(r)
-
-	// **获取端口 & 启动服务**
-	host := config.G.App.Host
-	port := config.G.App.Port
-	fmt.Printf("🚀 服务启动: %v:%d\n", host, port)
-	log.Fatal(r.Run(fmt.Sprintf(":%d", port)))
+	// **启动服务器**
+	route.StartServer(r)
 }

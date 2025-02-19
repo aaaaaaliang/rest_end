@@ -17,7 +17,7 @@ func createCategory(c *gin.Context) {
 
 	var req Req
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.SuccessWithData(c, response.BadRequestCode, err.Error())
+		response.SuccessWithData(c, response.BadRequest, err.Error())
 		return
 	}
 
@@ -40,5 +40,5 @@ func createCategory(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, response.CreateSuccess)
+	response.Success(c, response.SuccessCode)
 }

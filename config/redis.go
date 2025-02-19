@@ -1,13 +1,13 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"github.com/redis/go-redis/v9"
-	"golang.org/x/net/context"
 	"log"
 )
 
-// RedisConfig Redis 配置
+// RedisConfig 配置结构体
 type RedisConfig struct {
 	Host     string `mapstructure:"host"`
 	Port     int    `mapstructure:"port"`
@@ -15,27 +15,26 @@ type RedisConfig struct {
 	Password string `mapstructure:"password"`
 }
 
-// R **全局 Redis 连接**
+// R **全局 Redis 客户端**
 var R *redis.Client
-var ctx = context.Background()
 
 // InitRedis **初始化 Redis 连接**
 func InitRedis() {
 	redisConfig := G.Redis
 
 	// 连接 Redis
-	client := redis.NewClient(&redis.Options{
+	R = redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", redisConfig.Host, redisConfig.Port),
-		Password: redisConfig.Password, // 密码
-		DB:       redisConfig.DB,       // 数据库
+		Password: redisConfig.Password, // 没有密码则留空
+		DB:       redisConfig.DB,
 	})
 
-	// Ping Redis，确保连接可用
-	_, err := client.Ping(ctx).Result()
+	// **测试 Redis 连接**
+	ctx := context.Background()
+	_, err := R.Ping(ctx).Result()
 	if err != nil {
 		log.Fatalf("❌ Redis 连接失败: %v", err)
 	}
 
-	R = client
 	log.Println("✔️ Redis 连接成功！")
 }

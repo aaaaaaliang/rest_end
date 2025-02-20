@@ -1,18 +1,25 @@
 package middleware
 
 import (
+	"context"
+	"encoding/json" // 添加导入 json 包
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"log"
 	"rest/config"
 	"rest/model"
 	"rest/response"
 	"strings"
+	"time"
 )
 
 func PermissionMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// 创建一个新的上下文（ctx）
+		ctx := context.Background() // 创建新的上下文
+
 		apiPath := c.Request.URL.Path
 		method := c.Request.Method
 
@@ -56,28 +63,55 @@ func PermissionMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// **4. 查询用户的权限**
+		// **4. 查询用户的权限，先查 Redis**
 		var userPermissions []struct {
 			Path   string `xorm:"path"`
 			Method string `xorm:"method"`
 		}
 
-		// 使用 DISTINCT 确保去重
-		err = config.DB.Table(model.UserRole{}).Alias("ur").
-			Join("INNER", []interface{}{model.RolePermission{}, "rp"}, "ur.role_code = rp.role_code").
-			Join("INNER", []interface{}{model.APIPermission{}, "p"}, "rp.permission_code = p.code").
-			Where("ur.user_code = ?", userCode).
-			Where("p.public = 2").
-			Distinct("p.path", "p.method").
-			Select("p.path, p.method").
-			Find(&userPermissions)
+		// 尝试从 Redis 获取缓存的权限
+		cacheKey := fmt.Sprintf("user_permissions:%s", userCode)
+		val, err := config.R.Get(ctx, cacheKey).Result()
 
-		log.Println("userCode", userCode)
-		log.Println("该用户权限:", userPermissions)
-		if err != nil {
-			response.Success(c, response.Unauthorized, fmt.Errorf("权限查询失败 %v", err))
+		if errors.Is(err, redis.Nil) {
+			// Redis 中没有缓存，查询数据库并缓存到 Redis
+			log.Println("a1")
+			err = config.DB.Table(model.UserRole{}).Alias("ur").
+				Join("INNER", []interface{}{model.RolePermission{}, "rp"}, "ur.role_code = rp.role_code").
+				Join("INNER", []interface{}{model.APIPermission{}, "p"}, "rp.permission_code = p.code").
+				Where("ur.user_code = ?", userCode).
+				Where("p.public = 2").
+				Distinct("p.path", "p.method").
+				Select("p.path, p.method").
+				Find(&userPermissions)
+
+			if err != nil {
+				response.Success(c, response.Unauthorized, fmt.Errorf("权限查询失败 %v", err))
+				c.Abort()
+				return
+			}
+
+			// 将用户权限数据缓存到 Redis 中（有效期 1 小时）
+			permissionsData, _ := json.Marshal(userPermissions)
+			err = config.R.Set(ctx, cacheKey, permissionsData, time.Hour).Err()
+			if err != nil {
+				log.Println("缓存权限失败:", err)
+			}
+
+		} else if err != nil {
+			// 读取 Redis 错误
+			response.Success(c, response.Unauthorized, fmt.Errorf("读取缓存失败 %v", err))
 			c.Abort()
 			return
+		} else {
+			log.Println("a2")
+			// Redis 中有缓存，直接解析缓存数据
+			err = json.Unmarshal([]byte(val), &userPermissions)
+			if err != nil {
+				response.Success(c, response.Unauthorized, fmt.Errorf("解析缓存数据失败 %v", err))
+				c.Abort()
+				return
+			}
 		}
 
 		// **5. 处理 API 路径匹配**
@@ -91,7 +125,7 @@ func PermissionMiddleware() gin.HandlerFunc {
 
 		// **6. 没有权限，返回 403**
 		if !allowed {
-			response.Success(c, response.Unauthorized, fmt.Errorf("无访问权限 %v", err))
+			response.Success(c, response.Unauthorized, fmt.Errorf("无访问权限"))
 			c.Abort()
 			return
 		}

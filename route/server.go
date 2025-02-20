@@ -1,7 +1,6 @@
 package route
 
 import (
-	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -23,8 +22,8 @@ func InitServer() *gin.Engine {
 	// ** ws **
 	// **创建 WebSocket Hub**
 	//ctx, cancel := context.WithCancel(context.Background())
-	ctx := context.Background()
-	hub := ws.NewHub(ctx, "websocket_channel")
+	//ctx := context.Background()
+	hub := ws.NewHub()
 	//// **监听系统信号，优雅退出**
 	//go func() {
 	//	sig := make(chan os.Signal, 1)
@@ -34,7 +33,9 @@ func InitServer() *gin.Engine {
 	//	cancel() // **取消 context，确保 Redis 订阅自动退出**
 	//}()
 	// **手动注册 WebSocket 路由**
+
 	r.GET("/api/ws", func(c *gin.Context) {
+		log.Println("Received WebSocket connection request")
 		ws.ServeWs(hub, c)
 	})
 	// **自动注册 API 权限**

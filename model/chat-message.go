@@ -1,14 +1,15 @@
 package model
 
-import "time"
-
-// ChatMessage 存储聊天记录
 type ChatMessage struct {
-	ID        int64     `xorm:"pk autoincr 'id'"`                      // 主键，自增 ID
-	FromUser  string    `xorm:"varchar(50) notnull 'from_user'"`       // 发送者 user_code
-	ToUser    string    `xorm:"varchar(50) 'to_user'"`                 // 接收者 user_code（为空表示群发）
-	Content   string    `xorm:"text notnull 'content'"`                // 消息内容
-	Type      string    `xorm:"varchar(20) notnull 'type'"`            // 消息类型（text, image, file）
-	Status    string    `xorm:"varchar(20) default 'unread' 'status'"` // 消息状态（unread, read）
-	Timestamp time.Time `xorm:"created 'timestamp'"`                   // 发送时间
+	Id              int64  `json:"id" xorm:"pk autoincr"`
+	FromUser        string `json:"from_user"`
+	ToUser          string `json:"to_user,omitempty"`
+	Content         string `json:"content"`
+	Timestamp       int64  `json:"timestamp"`
+	Type            string `json:"type"`
+	IsHandled       bool   `json:"is_handled"`
+	Read            bool   `json:"read"`
+	SupportUserCode string `json:"support_user_code,omitempty"`
+	Status          string `json:"status,omitempty"`
+	Role            string `json:"role,omitempty"` // 可选字段，用于存储角色
 }

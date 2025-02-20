@@ -61,3 +61,11 @@ func login(c *gin.Context) {
 	// 登录成功
 	response.Success(c, response.SuccessCode)
 }
+
+func logout(c *gin.Context) {
+	// 删除 Cookie
+	c.SetCookie("access_token", "", -1, "/", "", false, true) // 设置过期时间为过去，清除 Cookie
+
+	// 退出成功
+	response.Success(c, response.SuccessCode)
+}

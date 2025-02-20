@@ -15,4 +15,5 @@ type UserOrder struct {
 	Status      int              `xorm:"default 0 comment('订单状态  1已下单 2.制作中 3.已完成 4.已逾期（暂留）5.无法处理')" json:"status"` // 订单状态
 	Remark      string           `xorm:"varchar(255) comment('订单备注')" json:"remark"`                                // 备注信息
 	OrderDetail []OrderDetail    `xorm:"json comment('订单详细信息，存储为JSON格式')" json:"order_detail"`                      // 自动处理 JSON 数据
+	Version     int              `xorm:"default 1 comment('乐观锁版本号')" json:"version"`
 }

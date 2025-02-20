@@ -113,24 +113,6 @@ func listUsers(c *gin.Context) {
 	response.SuccessWithTotal(c, response.SuccessCode, responseUsers, int(count))
 }
 
-// extractUserCodes 提取用户 ID 列表
-func extractUserCodes(users []Info) []string {
-	var codes []string
-	for _, user := range users {
-		codes = append(codes, user.Code)
-	}
-	return codes
-}
-
-// interfaceSlice 转换 []string 为 []interface{}，用于 SQL 查询
-func interfaceSlice(slice []string) []interface{} {
-	result := make([]interface{}, len(slice))
-	for i, v := range slice {
-		result[i] = v
-	}
-	return result
-}
-
 // 获取当前用户的角色
 func getUserRole(c *gin.Context) {
 	userCode := utils.GetUser(c)
@@ -161,4 +143,22 @@ func getUserRole(c *gin.Context) {
 		"user":  user,
 		"roles": roles,
 	})
+}
+
+// extractUserCodes 提取用户 ID 列表
+func extractUserCodes(users []Info) []string {
+	var codes []string
+	for _, user := range users {
+		codes = append(codes, user.Code)
+	}
+	return codes
+}
+
+// interfaceSlice 转换 []string 为 []interface{}，用于 SQL 查询
+func interfaceSlice(slice []string) []interface{} {
+	result := make([]interface{}, len(slice))
+	for i, v := range slice {
+		result[i] = v
+	}
+	return result
 }

@@ -12,6 +12,9 @@ func RegisterUserRoutes(group *gin.RouterGroup) {
 	// 用户登录
 	group.POST("/user/login", login)
 
+	// 退出登录
+	group.GET("/user/logout", logout)
+
 	// GitHub OAuth 登录
 	group.GET("/user/oauth/github/login", githubLogin)
 
@@ -44,6 +47,4 @@ func RegisterUserRoutes(group *gin.RouterGroup) {
 
 	// 查询用户角色信息
 	group.GET("/user/role", getUserRole)
-	//// 查询用户信息
-	//group.GET("/user/info", gerUserInfo)
 }

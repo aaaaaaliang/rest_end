@@ -36,7 +36,6 @@ func githubLogin(c *gin.Context) {
 		Scopes:       []string{config.G.Oauth2.Scope},
 		Endpoint:     github.Endpoint,
 	}
-	log.Println("我被调用了")
 
 	oauth2StateString := generateState() // 生成随机 state
 	c.SetCookie("oauth2_state", oauth2StateString, 3600, "/", "", false, true)

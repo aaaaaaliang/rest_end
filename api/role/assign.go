@@ -1,10 +1,12 @@
 package role
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"rest/config"
 	"rest/model"
 	"rest/response"
+	"rest/utils"
 )
 
 func assignRolePermissions(c *gin.Context) {
@@ -17,6 +19,18 @@ func assignRolePermissions(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Success(c, response.BadRequest, err)
 		return
+	}
+
+	if req.RoleCode == "58732ecc-7ed5-49a7-8603-f721be698e90" {
+		userCode, exist := utils.GetUserCode(c)
+		if !exist {
+			return
+		}
+
+		if userCode != "admin" {
+			response.Success(c, response.UpdateFail, errors.New("只有管理员才能操作admin"))
+			return
+		}
 	}
 
 	// 删除已有权限

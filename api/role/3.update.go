@@ -1,10 +1,13 @@
 package role
 
 import (
+	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"rest/config"
 	"rest/model"
 	"rest/response"
+	"rest/utils"
 )
 
 func updateRole(c *gin.Context) {
@@ -17,6 +20,24 @@ func updateRole(c *gin.Context) {
 	var req Req
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Success(c, response.BadRequest, err)
+		return
+	}
+
+	if req.Code == "58732ecc-7ed5-49a7-8603-f721be698e90" {
+		userCode, exist := utils.GetUserCode(c)
+		if !exist {
+			return
+		}
+
+		if userCode != "admin" {
+			response.Success(c, response.UpdateFail, errors.New("只有管理员才能操作admin"))
+			return
+		}
+	}
+
+	exist, err := config.DB.Table(model.Role{}).Where("name = ?", req.Name).Exist()
+	if exist || err != nil {
+		response.Success(c, response.QueryFail, fmt.Errorf("角色名称已存在或者 err: %v", err))
 		return
 	}
 

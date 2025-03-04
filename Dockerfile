@@ -1,22 +1,35 @@
-FROM golang:1.23 as builder
-WORKDIR /app
-COPY . .
-RUN go mod tidy
-RUN GOS=linux GOARCH=amd64 go build -o main .
+FROM golang:1.23-alpine AS builder
 
-# 使用较小的镜像作为运行时环境
+ENV GOPROXY=https://goproxy.cn,direct
+
+# 安装基本构建工具
+RUN apk add --no-cache gcc musl-dev
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+# 确保生成静态链接的二进制文件
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags='-extldflags "-static"' -o main .
+
 FROM alpine:latest
 
-# 安装必要的运行时依赖
-RUN apk --no-cache add ca-certificates
+# 安装基本运行时依赖
+RUN apk add --no-cache ca-certificates libc6-compat
 
-# 设置工作目录
-WORKDIR /root/
-# 从 builder 镜像中复制编译好的程序
+WORKDIR /root
+
+# 复制二进制文件
 COPY --from=builder /app/main .
 
-# 暴露容器的端口（根据实际需要修改）
-EXPOSE 8080
+# 复制配置文件目录
+COPY --from=builder /app/config ./config
 
-# 设置容器启动时运行的命令
+RUN chmod +x ./main
+
+EXPOSE 8888
+
 CMD ["./main"]

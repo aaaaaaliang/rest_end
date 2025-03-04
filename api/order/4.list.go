@@ -10,9 +10,10 @@ import (
 
 func listOrder(c *gin.Context) {
 	type Req struct {
-		Index int  `form:"index" json:"index" binding:"required"` // 当前页码
-		Size  int  `form:"size" json:"size" binding:"required"`   // 每页条数
-		All   bool `form:"all" json:"all"`                        // 是否查看全部
+		Index  int  `form:"index" json:"index" binding:"required"` // 当前页码
+		Size   int  `form:"size" json:"size" binding:"required"`   // 每页条数
+		Status int  `form:"status" json:"status"`
+		All    bool `form:"all" json:"all"` // 是否查看全部
 	}
 
 	var req Req
@@ -28,6 +29,9 @@ func listOrder(c *gin.Context) {
 	// 如果 req.All 为 true，则查询所有；否则仅查询个人数据
 	if !req.All {
 		db = db.Where("user_code = ?", userCode)
+	}
+	if req.Status != 0 {
+		db = db.Where("status = ?", req.Status)
 	}
 
 	num, err := db.FindAndCount(&res)

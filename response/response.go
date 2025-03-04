@@ -37,6 +37,18 @@ const (
 	BalanceNotEnough = 5300
 )
 
+// 4. 订单状态码
+const (
+	OrderNotFound      = 6100
+	OrderExists        = 6101
+	OrderNotPay        = 6200
+	OrderCanceled      = 6300
+	OrderTimeout       = 6400
+	OrderPaymentFailed = 6500
+	OrderRefundSuccess = 6600
+	OrderRefundFail    = 6700
+)
+
 // **✅ 4. 状态码消息映射**
 var messages = map[int]string{
 	SuccessCode:  "操作成功",
@@ -63,9 +75,18 @@ var messages = map[int]string{
 	UserNotFound:     "用户不存在",
 	UserExists:       "用户已存在",
 	BalanceNotEnough: "余额不足",
+
+	OrderNotFound:      "订单不存在",
+	OrderExists:        "订单已存在",
+	OrderNotPay:        "订单未支付",
+	OrderCanceled:      "订单已取消",
+	OrderTimeout:       "订单已超时",
+	OrderPaymentFailed: "订单支付失败",
+	OrderRefundSuccess: "订单退款成功",
+	OrderRefundFail:    "订单退款失败",
 }
 
-// **✅ 5. 统一 Response 结构**
+// Response **✅ 5. 统一 Response 结构**
 type Response struct {
 	Code      int         `json:"code"`
 	Message   string      `json:"message"`
@@ -75,7 +96,7 @@ type Response struct {
 	Err       *string     `json:"error,omitempty"`
 }
 
-// **✅ 6. 响应成功**
+// Success **✅ 6. 响应成功**
 func Success(c *gin.Context, code int, err ...error) {
 	var errMsg *string
 	if len(err) > 0 && err[0] != nil {
@@ -90,7 +111,7 @@ func Success(c *gin.Context, code int, err ...error) {
 	})
 }
 
-// **✅ 7. 响应成功（含数据）**
+// SuccessWithData **✅ 7. 响应成功（含数据）**
 func SuccessWithData(c *gin.Context, code int, data interface{}, err ...error) {
 	var errMsg *string
 	if len(err) > 0 && err[0] != nil {
@@ -106,7 +127,7 @@ func SuccessWithData(c *gin.Context, code int, data interface{}, err ...error) {
 	})
 }
 
-// **✅ 8. 响应成功（含数据 + 总数）**
+// SuccessWithTotal **✅ 8. 响应成功（含数据 + 总数）**
 func SuccessWithTotal(c *gin.Context, code int, data interface{}, total int, err ...error) {
 	var errMsg *string
 	if len(err) > 0 && err[0] != nil {

@@ -1,6 +1,7 @@
 package role
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"rest/config"
 	"rest/model"
@@ -15,6 +16,10 @@ func deleteRole(c *gin.Context) {
 	var req Req
 	if err := c.ShouldBindQuery(&req); err != nil {
 		response.Success(c, response.BadRequest, err)
+		return
+	}
+	if req.Code == "admin" {
+		response.Success(c, response.DeleteFail, errors.New("admin 不能被删除"))
 		return
 	}
 

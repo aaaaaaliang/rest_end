@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
+	"rest/api/ai"
 	"rest/model"
 	"time"
 )
@@ -24,7 +25,6 @@ func (c *Client) readPump() {
 		_ = c.conn.Close()
 	}()
 
-	// 设置连接读取超时
 	_ = c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	c.conn.SetPongHandler(func(string) error {
 		_ = c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
@@ -45,28 +45,23 @@ func (c *Client) readPump() {
 			continue
 		}
 
-		// 如果是身份验证消息
+		// **身份验证**
 		if msg.Type == "identify" {
-			// 验证消息并设置角色
 			if msg.Role == "user" {
 				c.isSupport = false
 			} else if msg.Role == "service" {
 				c.isSupport = true
-
 				c.hub.register <- c
 			} else {
-				errorMsg := []byte(`{"error": "无效的角色类型"}`)
-				// 发给自己
-				c.send <- errorMsg
+				c.send <- []byte(`{"error": "无效的角色类型"}`)
 				continue
 			}
 		} else if c.isSupport {
-			// 如果是客服用户，直接处理消息
+			// **人工客服**
 			msg.FromUser = c.userCode
 			if msg.ToUser == "" {
 				c.hub.broadcast <- msg
 			} else {
-				// 给目标用户发送消息
 				if receiver, exists := c.hub.clients[msg.ToUser]; exists {
 					receiver.send <- []byte(msg.Content)
 				} else {
@@ -74,24 +69,30 @@ func (c *Client) readPump() {
 				}
 			}
 		} else {
-			// 普通用户消息处理
+			// **普通用户发送消息**
 			if !c.hub.isSupportOnline() {
-				errorMsg, _ := json.Marshal(map[string]string{
-					"type":    "error",
-					"content": "没有在线客服，无法发送消息",
-				})
-				c.send <- errorMsg
-			} else {
-				msg.FromUser = c.userCode
-				// 普通用户发送消息给客服
-				if msg.ToUser == "" {
-					c.hub.broadcast <- msg
+				// **调用 AI 客服**
+				aiReply, err := ai.SendToAI("deepseek-r1:1.5b", msg.Content) // 使用本地 AI 方法
+				if err != nil {
+					errorMsg, _ := json.Marshal(map[string]string{
+						"type":    "error",
+						"content": "AI 客服暂时不可用",
+					})
+					c.send <- errorMsg
 				} else {
-					// 发送给所有在线客服
-					for _, support := range c.hub.supportClients {
-						msgBytes, _ := json.Marshal(msg)
-						support.send <- msgBytes
-					}
+					aiResponse, _ := json.Marshal(map[string]string{
+						"type":      "chat",
+						"content":   aiReply,
+						"from_user": "AI",
+					})
+					c.send <- aiResponse
+				}
+			} else {
+				// **人工客服在线，消息转发给客服**
+				msg.FromUser = c.userCode
+				for _, support := range c.hub.supportClients {
+					msgBytes, _ := json.Marshal(msg)
+					support.send <- msgBytes
 				}
 			}
 		}

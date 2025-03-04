@@ -3,6 +3,7 @@ package order
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
 	"rest/config"
 	"rest/model"
 	"rest/response"
@@ -31,19 +32,28 @@ func addOrder(c *gin.Context) {
 		response.Success(c, response.ServerError, err)
 		return
 	}
+	var user model.Users
+	if _, err := config.DB.Where("code = ?", userCode).Get(&user); err != nil {
+		_ = session.Rollback()
+		response.Success(c, response.ServerError, err)
+		return
+	}
+	log.Println("--------------------", user.Code, "-----", user.Username)
 
 	// 构造订单模型
 	order := &model.UserOrder{
 		TotalPrice:  req.TotalPrice,
-		Status:      1, // 订单状态 1已下单 2.制作中 3.已完成 4. 取消订单
+		Status:      5, // 订单状态  待支付 1已下单 2.制作中 3.已完成 4. 取消订单 5.待支付
 		Remark:      req.Remark,
 		OrderDetail: req.Details, // 直接使用切片
 		UserCode:    userCode,
+		UserName:    user.Username,
 	}
+	order.Code = utils.GenerateOrderCode()
 
 	// 插入订单
 	if affectRow, err := session.Insert(order); err != nil || affectRow != 1 {
-		session.Rollback()
+		_ = session.Rollback()
 		response.Success(c, response.ServerError, err)
 		return
 	}
@@ -52,7 +62,7 @@ func addOrder(c *gin.Context) {
 	for _, detail := range req.Details {
 		// 假设 OrderDetail 中包含 ProductCode
 		if detail.ProductCode == "" {
-			session.Rollback()
+			_ = session.Rollback()
 			response.Success(c, response.ServerError, fmt.Errorf("产品编号为空"))
 			return
 		}
@@ -68,14 +78,9 @@ func addOrder(c *gin.Context) {
 			Update(&model.UserCart{
 				IsOrdered: true,
 			})
-		if err != nil {
+		if err != nil || affected == 0 {
 			session.Rollback()
-			response.Success(c, response.ServerError, err)
-			return
-		}
-		if affected == 0 {
-			session.Rollback()
-			response.Success(c, response.ServerError, fmt.Errorf("购物车项不存在或已下单"))
+			response.Success(c, response.ServerError, fmt.Errorf("购物车项不存在或已下单 %v", err))
 			return
 		}
 	}

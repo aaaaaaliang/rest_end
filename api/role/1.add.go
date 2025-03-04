@@ -1,6 +1,7 @@
 package role
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"rest/config"
 	"rest/model"
@@ -17,6 +18,11 @@ func addRole(c *gin.Context) {
 	var req Req
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Success(c, response.BadRequest, err)
+		return
+	}
+	exist, err := config.DB.Table(model.Role{}).Where("name = ?", req.Name).Exist()
+	if exist || err != nil {
+		response.Success(c, response.QueryFail, fmt.Errorf("角色名称已存在或者 err: %v", err))
 		return
 	}
 

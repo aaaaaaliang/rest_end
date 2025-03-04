@@ -21,7 +21,7 @@ func getBanners(c *gin.Context) {
 		return
 	}
 	var banners []model.Banner
-	count, err := config.DB.Asc("created").Limit(req.Size, (req.Index-1)*req.Size).Asc("created").FindAndCount(&banners)
+	count, err := config.DB.Asc("created").Limit(req.Size, (req.Index-1)*req.Size).Desc("created").FindAndCount(&banners)
 	if err != nil {
 		response.Success(c, response.ServerError, err)
 		return

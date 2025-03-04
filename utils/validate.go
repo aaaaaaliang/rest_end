@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
 	"rest/response"
 	"strings"
 )
@@ -32,6 +33,8 @@ func ValidationQuery(c *gin.Context, d any) (success bool) {
 
 // ValidationJson 校验 JSON 数据
 func ValidationJson(c *gin.Context, d any) (success bool) {
+	log.Println("Request Body:", c.Request.Body) // 打印请求体内容
+
 	// 先检查请求体是否为空
 	if c.Request.Body == nil {
 		response.Success(c, response.BadRequest, errors.New("请求体为空"))

@@ -20,6 +20,7 @@ func deleteOrder(c *gin.Context) {
 	}
 
 	fmt.Println("code", req.Code)
+
 	if affectRow, err := config.DB.Where("code = ?", req.Code).Delete(model.UserOrder{}); err != nil || affectRow != 1 {
 		response.Success(c, response.ServerError, err)
 		return

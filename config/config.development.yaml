@@ -1,0 +1,73 @@
+app:
+  name: "AliangRest"
+  host: "localhost"
+  port: 8888
+  env: "development"  # 环境 development / production
+  debug: true         # 是否开启调试模式
+  front: "http://localhost:5379"
+
+database:
+  driver: "mysql"            # 数据库类型（mysql, postgres, sqlite）
+  host: "localhost"
+  port: 3306
+  user: "root"
+  password: "111111"
+  name: "rest"
+  max_open_conns: 50         # 最大连接数
+  max_idle_conns: 10         # 最大空闲连接数
+  log_level: "debug"         # SQL 日志级别（silent, error, warn, info, debug）
+  show_sql: true             # 是否展示 SQL 语句
+
+
+jwt:
+  secret: "aliang"
+  expires_in: 86400   # JWT 过期时间（秒）
+
+log:
+  level: "debug"      # 日志级别（debug, info, warn, error, fatal）
+  file: "logs/app.log" # 日志文件路径
+  max_size: 10        # 日志文件最大大小（MB）
+  max_backups: 3      # 最多保留的旧日志文件数
+  max_age: 7         # 日志最长保留天数
+
+oauth2:
+  client_id: "Ov23liYumOcnNxIKmttx"
+  client_secret: "7ac9ef7c87a82fd1db601eeaf5c4979570c9be3b"
+  redirect_uri: "http://localhost:8888/api/user/oauth/callback"
+  scope: "user"
+
+cors:
+  allow_origins:
+    - "http://localhost:5173"              # 允许的前端域名（支持多个）
+  allow_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+  allow_headers:
+    - "Content-Type"
+    - "Authorization"
+  allow_credentials: true  # 允许携带 Cookie
+  max_age: 3600  # 预检请求（OPTIONS）的缓存时间（秒）
+
+
+uploads:
+  url: "C:\\Users\\aliang\\Desktop\\rest-end - 副本\\uploads"
+
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  password: ""
+
+ai:
+  url: "http://localhost:11434/api/generate"
+
+
+pay:
+  private_key: "MIIEowIBAAKCAQEAytiXT9vkQTGoJxbF+SGXLVHqd0wHFLk1SjNujyxrAkdg/2xzMbNDsH+xX8JcW/0KwZip+VmAmtFaed5r4BYUPCa0T9MYZKKjraKkfEUcRwR13v01POpPtSvvPNM23nYDp/Mnjcx2mf+E3XRaHQWp8d66sq08yDR+UMrLKLBGvdWotEGyy3rqVWtdnDq9ui7vpGcNmrNpMT+a1OOdBxK9Nenvn8Exna69VLp1YUJRK8uireHsB1xJdpOcZKjX3BNE9+/H2r7PYLYvEVkSJJwHJd3vji6EQJyBdJgAbV64UQElm16gPiitprnbJ92AhMozv5QcmgUP+ymEir0xjP53awIDAQABAoIBAArDBPwaqXh//vDb93LpQlEIOI1Nvk5uKRKfuezkqWS8jrvecBoh7aRukeWHtUi4Gxr8U4BELFuKYed3UnfYFAjA8O4PQAsOyepLZ7ikHgTyiqJjArERqVruUsoCVrXkwvrlHqMaRuySruTk6GcDxulrLLKQGFpy1oTIzZCCEa6+j+cgdPC67Wf2mIJrgwjH86uj1IWjzkeEZK/RylqD+xftJrBkhhAXO0mC+6lRKwssXzh84XYO7yGkweS03kPiYHlAtc9Z4PkcqGZ7GAQXsZ2a0GBfC3RnkRo0R96Z1Xm6qtrC2lZg+1zbXb9ObvO6jlVMTqeOvBvITlExZ8aWRZkCgYEA+RkgZRxE1Qno2eCVw5ltbDMHV0UIDCylugZP50rTZVmFUwvAzJNcb6pQEPRTwpoYN22DhXkimOIxA0JbFno5FSwqC+s3cck5EEHG3UZZ8x0KssoirJVG3Ce8BuNVD5D9Wey94nTSQjPBlLvNED0uD5cCdGwjLpOvZQEa1ocEJ0UCgYEA0HdlCPoZbq+Rf+c62PlwtjOjSiR2boRw7TvzfEiz2XNiIvr9V6sslCU0fBx4buJwUOdF4v05rQDFliefVfqnbnrE/kTPt32Zbc1TcKOsMiA08P2Eh4fFcoPBr0IzLdNePWdg+S+nuP1ocAuZlgnMuvTo1Z3p21QoBahuOuw0du8CgYEAt6acya8D2IWL1UbNY/50PDeLC/5rJn6sWPBabM4v+SL9NvMNXEaw+er5SOa58lmlzQfC1d8vcMQjGqILghDukPuUrGDo6c1Pcvrr4SwDGUiqIJMC6XbNXXc2G2Xzypw9DdWLUbCLbB+4cy3azEQu93OAbdFkRuy/fZpI7S1yFHkCgYBDoQgxAlnv05tDQDOSIlITeesWaX/WWLb9734NKtTVzZ3ftUctAsYihXNidCYJ6wH+7Rh6DCaC3oY7MT16uidJKyDvUEmGwINe4MaZ+y8oz9P8/nHZOg2vGdlizvolerXO+9O042XpGKSh/NFloGY/nKZQbrtoQQP+2eZwzSI0FwKBgE2WwVSN8godlfHysEXvwpGzyt+fKRljSpIEYcuhWfCGJiPkeaE19QoW/D7BjreNv76b4ZRIi9Pyk5+lV29DwPwUo5LAcq3Jtu33PNk/a/JfxcyQFwMNRBbr9twpjEFmzywPqzrsQNGt8Rs+c08AtM9P2m6ShOXL0byIiWZMyrGL"
+  set_return_url: "http://localhost:5173/#/orders"
+  set_notify_url: "http://localhost:8888/api/pay/callback"
+  app_id: "9021000145622817"
+  is_prod: "false"

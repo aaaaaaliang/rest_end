@@ -18,7 +18,7 @@ func Cors() gin.HandlerFunc {
 			// 只有在配置的域名列表中，才允许访问
 			for _, allowedOrigin := range allowedOrigins {
 				if allowedOrigin == origin {
-					c.Header("Access-Control-Allow-Origin", origin)
+					c.Header("Access-Control-Allow-Origin", origin) // 动态设置允许的来源
 					break
 				}
 			}

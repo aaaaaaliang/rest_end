@@ -3,11 +3,12 @@ package config
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/spf13/viper"
 )
 
-// Config 结构体映射 config.yaml
+// Config 结构体映射 config.production.yaml
 type Config struct {
 	App      AppConfig      `mapstructure:"app"`
 	Database DatabaseConfig `mapstructure:"database"`
@@ -17,6 +18,8 @@ type Config struct {
 	Oauth2   Oauth2Config   `mapstructure:"oauth2"` // Oauth2的结构体
 	Cors     CorsConfig     `mapstructure:"cors"`   // CORS 配置
 	Uploads  UploadConfig   `mapstructure:"uploads"`
+	AI       AIConfig       `mapstructure:"ai"`
+	Pay      PayConfig      `mapstructure:"pay"`
 }
 
 // G 全局配置
@@ -24,7 +27,13 @@ var G Config
 
 // LoadConfig 读取配置文件
 func LoadConfig() {
-	viper.SetConfigName("config") // 读取 config.yaml
+
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		env = "development"
+	}
+
+	viper.SetConfigName("config." + env) // 读取 config.production.yaml
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("./config") // 指定目录
 

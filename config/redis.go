@@ -33,7 +33,7 @@ func InitRedis() {
 	ctx := context.Background()
 	_, err := R.Ping(ctx).Result()
 	if err != nil {
-		log.Fatalf("❌ Redis 连接失败: %v", err)
+		log.Printf("❌ Redis 连接失败: %v", err)
 	}
 
 	log.Println("✔️ Redis 连接成功！")

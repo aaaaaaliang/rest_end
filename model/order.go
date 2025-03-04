@@ -10,7 +10,8 @@ type OrderDetail struct {
 
 type UserOrder struct {
 	BasicModel  `xorm:"extends"` // 继承基础字段
-	UserCode    string           `xorm:"notnull comment('用户ID')" json:"user_code"`                                  // 用户ID
+	UserCode    string           `xorm:"notnull comment('用户ID')" json:"user_code"` // 用户ID
+	UserName    string           `xorm:"notnull comment('用户名')" json:"user_name"`
 	TotalPrice  float64          `xorm:"notnull comment('订单总金额')" json:"total_price"`                               // 总金额
 	Status      int              `xorm:"default 0 comment('订单状态  1已下单 2.制作中 3.已完成 4.已逾期（暂留）5.无法处理')" json:"status"` // 订单状态
 	Remark      string           `xorm:"varchar(255) comment('订单备注')" json:"remark"`                                // 备注信息

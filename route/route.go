@@ -3,11 +3,13 @@ package route
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"rest/api/ai"
 	"rest/api/banner"
 	"rest/api/cart"
 	"rest/api/category"
 	"rest/api/dashboard"
 	"rest/api/order"
+	"rest/api/pay"
 	"rest/api/product"
 	"rest/api/public"
 	"rest/api/role"
@@ -33,6 +35,8 @@ func registerRoutes(r *gin.Engine) {
 	role.RegisterRoleRoutes(apiGroup)
 	salary.RegisterSalaryRoutes(apiGroup)
 	dashboard.RegisterDashboardRoutes(apiGroup)
+	ai.RegisterAIRoutes(apiGroup)
+	pay.RegisterPayRoutes(apiGroup)
 }
 
 func autoRegisterAPIPermissions(router *gin.Engine) {

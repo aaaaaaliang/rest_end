@@ -18,7 +18,6 @@ type Client struct {
 	isSupport bool // 标记是否为客服
 }
 
-// 读取客户端消息
 func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
@@ -70,33 +69,46 @@ func (c *Client) readPump() {
 			}
 		} else {
 			// **普通用户发送消息**
-			if !c.hub.isSupportOnline() {
-				// **调用 AI 客服**
-				aiReply, err := ai.SendToAI("deepseek-r1:1.5b", msg.Content) // 使用本地 AI 方法
-				if err != nil {
-					errorMsg, _ := json.Marshal(map[string]string{
-						"type":    "error",
-						"content": "AI 客服暂时不可用",
-					})
-					c.send <- errorMsg
-				} else {
-					aiResponse, _ := json.Marshal(map[string]string{
-						"type":      "chat",
-						"content":   aiReply,
-						"from_user": "AI",
-					})
-					c.send <- aiResponse
-				}
-			} else {
-				// **人工客服在线，消息转发给客服**
-				msg.FromUser = c.userCode
-				for _, support := range c.hub.supportClients {
-					msgBytes, _ := json.Marshal(msg)
-					support.send <- msgBytes
-				}
-			}
+			go c.handleUserRequest(msg)
 		}
 	}
+}
+
+func (c *Client) handleUserRequest(msg model.ChatMessage) {
+	var responseMsg string
+
+	// **订单查询**
+	if containsKeywords(msg.Content, []string{"查看订单", "我的订单", "订单"}) {
+		orders, err := fetchOrders(c.userCode)
+		if err != nil {
+			responseMsg = "❌ 获取订单失败，请稍后再试"
+		} else {
+			responseMsg = orders
+		}
+		sendAIResponse(c, responseMsg)
+		return
+	}
+
+	// **推荐菜品**
+	if containsKeywords(msg.Content, []string{"推荐菜", "特色菜", "推荐几道菜"}) {
+		dishes, err := fetchRecommendedDishes()
+		if err != nil {
+			responseMsg = "❌ 获取推荐菜品失败，请稍后再试"
+		} else {
+			responseMsg = dishes
+		}
+		sendAIResponse(c, responseMsg)
+		return
+	}
+
+	// **调用 AI**
+	aiReply, err := ai.SendToAI("deepseek-r1:1.5b", msg.Content)
+	if err != nil {
+		responseMsg = "❌ AI 客服暂时不可用"
+	} else {
+		responseMsg = aiReply
+	}
+	sendAIResponse(c, responseMsg)
 }
 
 // writePump 监听 Hub 广播并发送给客户端

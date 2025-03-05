@@ -1,9 +1,14 @@
 package order
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"log"
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
 	"rest/config"
 	"rest/model"
 	"rest/response"
@@ -32,65 +37,91 @@ func addOrder(c *gin.Context) {
 		response.Success(c, response.ServerError, err)
 		return
 	}
+
 	var user model.Users
 	if _, err := config.DB.Where("code = ?", userCode).Get(&user); err != nil {
 		_ = session.Rollback()
 		response.Success(c, response.ServerError, err)
 		return
 	}
-	log.Println("--------------------", user.Code, "-----", user.Username)
+	log.Println("用户信息:", user.Code, user.Username)
 
 	// 构造订单模型
 	order := &model.UserOrder{
 		TotalPrice:  req.TotalPrice,
-		Status:      5, // 订单状态  待支付 1已下单 2.制作中 3.已完成 4. 取消订单 5.待支付
+		Status:      5, // 订单状态：待支付   // 订单状态  待支付 1已下单 2.制作中 3.已完成 4. 取消订单 5.待支付
 		Remark:      req.Remark,
-		OrderDetail: req.Details, // 直接使用切片
+		OrderDetail: req.Details,
 		UserCode:    userCode,
 		UserName:    user.Username,
 	}
 	order.Code = utils.GenerateOrderCode()
-
-	// 插入订单
+	order.Created = time.Now().Unix()
 	if affectRow, err := session.Insert(order); err != nil || affectRow != 1 {
 		_ = session.Rollback()
 		response.Success(c, response.ServerError, err)
 		return
 	}
 
-	// 标记购物车中的相应商品为已下单
-	for _, detail := range req.Details {
-		// 假设 OrderDetail 中包含 ProductCode
-		if detail.ProductCode == "" {
-			_ = session.Rollback()
-			response.Success(c, response.ServerError, fmt.Errorf("产品编号为空"))
-			return
-		}
-
-		cart := model.UserCart{
-			ProductCode: detail.ProductCode,
-			UserCode:    userCode,
-		}
-
-		// 更新 IsOrdered 字段为 true
-		affected, err := session.Where("user_code = ? AND product_code = ?", cart.UserCode, cart.ProductCode).
-			Cols("is_ordered").
-			Update(&model.UserCart{
-				IsOrdered: true,
-			})
-		if err != nil || affected == 0 {
-			session.Rollback()
-			response.Success(c, response.ServerError, fmt.Errorf("购物车项不存在或已下单 %v", err))
-			return
-		}
+	//存入 Elasticsearch
+	if err := saveOrderToES(order); err != nil {
+		_ = session.Rollback()
+		response.Success(c, response.ServerError, err)
+		return
 	}
 
 	// 提交事务
 	if err := session.Commit(); err != nil {
-		session.Rollback()
+		_ = session.Rollback()
 		response.Success(c, response.ServerError, err)
 		return
 	}
 
 	response.Success(c, response.SuccessCode)
+}
+
+// **存入 Elasticsearch**
+func saveOrderToES(order *model.UserOrder) error {
+	esURL := "http://localhost:9200/orders/_doc/" + order.Code
+
+	orderData := map[string]interface{}{
+		"code":         order.Code,
+		"user_code":    order.UserCode,
+		"user_name":    order.UserName,
+		"total_price":  order.TotalPrice,
+		"status":       order.Status,
+		"remark":       order.Remark,
+		"created":      order.Created,
+		"order_detail": []map[string]interface{}{},
+	}
+
+	// 转成nested
+	for _, detail := range order.OrderDetail {
+		orderData["order_detail"] = append(orderData["order_detail"].([]map[string]interface{}), map[string]interface{}{
+			"product_code": detail.ProductCode,
+			"product_name": detail.ProductName,
+			"quantity":     detail.Quantity,
+			"price":        detail.Price,
+			"picture":      detail.Picture,
+		})
+	}
+
+	// 转换为 JSON
+	jsonData, err := json.Marshal(orderData)
+	if err != nil {
+		return fmt.Errorf("JSON 编码失败: %v", err)
+	}
+
+	// 发送请求
+	req, _ := http.NewRequest("POST", esURL, bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("写入 Elasticsearch 失败: %v", err)
+	}
+	defer resp.Body.Close()
+
+	log.Println("✅ 订单已存入 Elasticsearch:", order.Code)
+	return nil
 }

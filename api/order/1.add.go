@@ -1,11 +1,9 @@
 package order
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
-	"net/http"
+	"rest/state"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -49,7 +47,7 @@ func addOrder(c *gin.Context) {
 	// 构造订单模型
 	order := &model.UserOrder{
 		TotalPrice:  req.TotalPrice,
-		Status:      5, // 订单状态：待支付   // 订单状态  待支付 1已下单 2.制作中 3.已完成 4. 取消订单 5.待支付
+		Status:      int(state.OrderPendingPayment), // 订单状态：待支付   // 订单状态 1.已下单 2.制作中 3.已完成 4. 取消订单 5.待支付
 		Remark:      req.Remark,
 		OrderDetail: req.Details,
 		UserCode:    userCode,
@@ -63,12 +61,32 @@ func addOrder(c *gin.Context) {
 		return
 	}
 
-	//存入 Elasticsearch
-	if err := saveOrderToES(order); err != nil {
+	message, err := json.Marshal(order)
+	if err != nil {
 		_ = session.Rollback()
 		response.Success(c, response.ServerError, err)
 		return
 	}
+
+	if err := publishMessage("order_queue", message); err != nil {
+		_ = session.Rollback()
+		response.Success(c, response.ServerError, err)
+		return
+	}
+
+	// 2. 发布延时消息到延时队列，用于30分钟后订单超时检测
+	if err := publishDelayOrder(order); err != nil {
+		_ = session.Rollback()
+		response.Success(c, response.ServerError, err)
+		return
+	}
+
+	////存入 Elasticsearch
+	//if err := saveOrderToES(order); err != nil {
+	//	_ = session.Rollback()
+	//	response.Success(c, response.ServerError, err)
+	//	return
+	//}
 
 	// 提交事务
 	if err := session.Commit(); err != nil {
@@ -78,50 +96,4 @@ func addOrder(c *gin.Context) {
 	}
 
 	response.Success(c, response.SuccessCode)
-}
-
-// **存入 Elasticsearch**
-func saveOrderToES(order *model.UserOrder) error {
-	esURL := "http://localhost:9200/orders/_doc/" + order.Code
-
-	orderData := map[string]interface{}{
-		"code":         order.Code,
-		"user_code":    order.UserCode,
-		"user_name":    order.UserName,
-		"total_price":  order.TotalPrice,
-		"status":       order.Status,
-		"remark":       order.Remark,
-		"created":      order.Created,
-		"order_detail": []map[string]interface{}{},
-	}
-
-	// 转成nested
-	for _, detail := range order.OrderDetail {
-		orderData["order_detail"] = append(orderData["order_detail"].([]map[string]interface{}), map[string]interface{}{
-			"product_code": detail.ProductCode,
-			"product_name": detail.ProductName,
-			"quantity":     detail.Quantity,
-			"price":        detail.Price,
-			"picture":      detail.Picture,
-		})
-	}
-
-	// 转换为 JSON
-	jsonData, err := json.Marshal(orderData)
-	if err != nil {
-		return fmt.Errorf("JSON 编码失败: %v", err)
-	}
-
-	// 发送请求
-	req, _ := http.NewRequest("POST", esURL, bytes.NewBuffer(jsonData))
-	req.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("写入 Elasticsearch 失败: %v", err)
-	}
-	defer resp.Body.Close()
-
-	log.Println("✅ 订单已存入 Elasticsearch:", order.Code)
-	return nil
 }

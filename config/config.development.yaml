@@ -71,3 +71,8 @@ pay:
   set_notify_url: "http://localhost:8888/api/pay/callback"
   app_id: "9021000145622817"
   is_prod: "false"
+
+mq:
+  username: "guest"
+  password: "guest"
+  url: "localhost:5672"

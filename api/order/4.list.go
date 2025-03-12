@@ -29,7 +29,7 @@ func listOrder(c *gin.Context) {
 	}
 
 	userCode := utils.GetUser(c)
-
+	log.Println("req", req, userCode)
 	// 2️⃣ 构造 Elasticsearch 查询
 	query := ESQueryMap{
 		"from": (req.Index - 1) * req.Size, // 偏移量
@@ -45,11 +45,10 @@ func listOrder(c *gin.Context) {
 		},
 	}
 
-	// 3️⃣ 过滤 `user_code`（如果 `all=false`）
 	if !req.All {
 		query["query"].(ESQueryMap)["bool"].(ESQueryMap)["filter"] = append(
 			query["query"].(ESQueryMap)["bool"].(ESQueryMap)["filter"].([]ESQueryMap),
-			ESQueryMap{"term": map[string]string{"user_code": userCode}},
+			ESQueryMap{"term": map[string]string{"user_code.keyword": userCode}},
 		)
 	}
 

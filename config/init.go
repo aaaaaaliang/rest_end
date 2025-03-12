@@ -8,5 +8,7 @@ func InitConfig() {
 	once.Do(func() {
 		InitDB()
 		InitRedis()
+		InitMQ()
+
 	})
 }

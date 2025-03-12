@@ -17,7 +17,6 @@ import (
 
 func PermissionMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 创建一个新的上下文（ctx）
 		ctx := context.Background() // 创建新的上下文
 
 		apiPath := c.Request.URL.Path

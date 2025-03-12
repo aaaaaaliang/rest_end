@@ -20,6 +20,7 @@ type Config struct {
 	Uploads  UploadConfig   `mapstructure:"uploads"`
 	AI       AIConfig       `mapstructure:"ai"`
 	Pay      PayConfig      `mapstructure:"pay"`
+	MQ       MqConfig       `mapstructure:"mq"`
 }
 
 // G 全局配置

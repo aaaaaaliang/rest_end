@@ -3,6 +3,7 @@ package main
 import (
 	_ "github.com/go-sql-driver/mysql"
 	"log"
+	"rest/api/order"
 	"rest/config"
 	"rest/model"
 	"rest/route"
@@ -33,6 +34,9 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// 启动消费者后台 Goroutine
+	go order.ConsumeOrderMessages()
+	go order.ConsumeTimeoutMessages()
 	// **初始化 Gin 服务器**
 	r := route.InitServer()
 

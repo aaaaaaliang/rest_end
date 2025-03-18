@@ -3,6 +3,7 @@ package route
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
 	"rest/api/ai"
 	"rest/api/banner"
 	"rest/api/cart"
@@ -44,6 +45,7 @@ func autoRegisterAPIPermissions(router *gin.Engine) {
 	var permissions []model.APIPermission
 	parentMap := make(map[string]string)
 
+	log.Println("routes:", routes)
 	for _, route := range routes {
 		if strings.HasPrefix(route.Path, "/debug") || strings.Contains(route.Handler, "gin.") {
 			continue
@@ -90,17 +92,17 @@ func autoRegisterAPIPermissions(router *gin.Engine) {
 		if exist {
 			_, err := config.DB.Where("code = ?", perm.Code).Update(&perm)
 			if err != nil {
-				fmt.Printf("⚠️ 更新权限失败: %v\n", err)
+				fmt.Printf("更新权限失败: %v\n", err)
 			}
 		} else {
 			_, err := config.DB.Insert(&perm)
 			if err != nil {
-				fmt.Printf("⚠️ 插入权限失败: %v\n", err)
+				fmt.Printf("插入权限失败: %v\n", err)
 			}
 		}
 	}
 
-	fmt.Println("✅ API 权限自动注册完成！")
+	fmt.Println("API 权限自动注册完成！")
 }
 
 // 生成 `code`

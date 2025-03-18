@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/redis/go-redis/v9"
-	"github.com/xormplus/xorm"
 	"log"
 	"rest/config"
 	"rest/model"
@@ -16,13 +15,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
-
-//const (
-//	redisStockKey  = "stock:%s"       // Redis 中的库存键格式
-//	redisPriceKey  = "price:%s"       // Redis 中的价格键格式
-//	redisCartLock  = "cart:lock:%s"   // Redis 分布式锁的键格式
-//	lockExpireTime = 10 * time.Second // 分布式锁的过期时间，防止死锁
-//)
 
 // AddCart 添加购物车
 func addCart(c *gin.Context) {
@@ -178,27 +170,4 @@ func getProductFromCache(ctx context.Context, productCode string) (*model.Produc
 		Count:      stock,
 		Price:      price,
 	}, nil
-}
-
-// acquireLock 获取分布式锁
-func acquireLock(ctx context.Context, lockKey string) bool {
-	ok, err := config.R.SetNX(ctx, lockKey, "1", state.LockExpireTime).Result()
-	if err != nil || !ok {
-		log.Printf("Failed to acquire lock for %s, err: %v", lockKey, err)
-		return false
-	}
-	return true
-}
-
-// releaseLock 释放分布式锁
-func releaseLock(ctx context.Context, lockKey string) {
-	if _, err := config.R.Del(ctx, lockKey).Result(); err != nil {
-		log.Printf("Failed to release lock for %s, err: %v", lockKey, err)
-	}
-}
-
-// rollbackTransaction 统一事务回滚逻辑
-func rollbackTransaction(session *xorm.Session, c *gin.Context, err error) {
-	_ = session.Rollback()
-	response.Success(c, response.UpdateFail, err)
 }

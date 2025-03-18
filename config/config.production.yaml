@@ -4,7 +4,7 @@ app:
   port: 8888
   env: "development"  # 环境 development / production
   debug: true         # 是否开启调试模式
-  front: "http://60.204.219.177:5379"
+  front: "http://60.204.219.177:5173"
 
 database:
   driver: "mysql"            # 数据库类型（mysql, postgres, sqlite）
@@ -79,3 +79,6 @@ mq:
   username: "guest"
   password: "guest"
   url: "localhost:5672"
+
+es:
+  url: "http://localhost:9200/orders/_doc/"

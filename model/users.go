@@ -2,7 +2,7 @@ package model
 
 type Users struct {
 	BasicModel `xorm:"extends"`
-	Username   string  `xorm:"varchar(255)" json:"username"`
+	Username   string  `xorm:"varchar(255) index" json:"username"`
 	Password   string  `xorm:"varchar(255)" json:"password"`
 	Email      string  `xorm:"varchar(255) comment('邮箱')" json:"email"`
 	Nickname   string  `xorm:"varchar(255) comment('昵称')" json:"nickname"`

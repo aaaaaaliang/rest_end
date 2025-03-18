@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"rest/config"
 	"rest/model"
 )
 
 // **存入 Elasticsearch**
 func saveOrderToES(order *model.UserOrder) error {
-	esURL := "http://localhost:9200/orders/_doc/" + order.Code
+	//"http://localhost:9200/orders/_doc/"
+	url := fmt.Sprintf("%v/orders/_doc/", config.G.ES.Url)
+	esURL := url + order.Code
 
 	orderData := map[string]interface{}{
 		"code":         order.Code,
@@ -24,7 +27,6 @@ func saveOrderToES(order *model.UserOrder) error {
 		"order_detail": []map[string]interface{}{},
 	}
 
-	// 转成nested
 	for _, detail := range order.OrderDetail {
 		orderData["order_detail"] = append(orderData["order_detail"].([]map[string]interface{}), map[string]interface{}{
 			"product_code": detail.ProductCode,
@@ -34,8 +36,6 @@ func saveOrderToES(order *model.UserOrder) error {
 			"picture":      detail.Picture,
 		})
 	}
-
-	// 转换为 JSON
 	jsonData, err := json.Marshal(orderData)
 	if err != nil {
 		return fmt.Errorf("JSON 编码失败: %v", err)

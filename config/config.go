@@ -21,6 +21,7 @@ type Config struct {
 	AI       AIConfig       `mapstructure:"ai"`
 	Pay      PayConfig      `mapstructure:"pay"`
 	MQ       MqConfig       `mapstructure:"mq"`
+	ES       ESConfig       `mapstructure:"es"`
 }
 
 // G 全局配置

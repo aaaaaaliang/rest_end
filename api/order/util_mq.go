@@ -121,7 +121,7 @@ func ConsumeTimeoutMessages() {
 	defer func(ch *amqp.Channel) {
 		err := ch.Close()
 		if err != nil {
-			log.Fatalf("死信队列关闭失败")
+			log.Fatalf("死信队列关闭失败 %v", err)
 		}
 	}(ch)
 

@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+	"rest/config"
 	"rest/response"
 	"rest/utils"
 )
@@ -67,14 +68,13 @@ func listOrder(c *gin.Context) {
 			ESQueryMap{
 				"bool": ESQueryMap{
 					"should": []ESQueryMap{
-						// 搜索 user_name 和 remark
+						// 搜索 user_name 和 remark   multi_match只支持普通字段
 						{
 							"multi_match": ESQueryMap{
 								"query":  req.Keyword,
 								"fields": []string{"user_name", "remark"},
 							},
 						},
-						// 🔥 这里改成 match 了，不是 nested 了！
 						{
 							"match": map[string]string{"order_detail.product_name": req.Keyword},
 						},
@@ -86,7 +86,8 @@ func listOrder(c *gin.Context) {
 
 	// 6️⃣ 发送查询请求
 	queryJSON, _ := json.Marshal(query)
-	esURL := "http://localhost:9200/orders/_search"
+	//esURL := "http://localhost:9200/orders/_search"
+	esURL := fmt.Sprintf("%v/orders/_search", config.G.ES.Url)
 
 	reqES, _ := http.NewRequest("POST", esURL, bytes.NewBuffer(queryJSON))
 	reqES.Header.Set("Content-Type", "application/json")

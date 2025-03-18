@@ -47,13 +47,12 @@ func SendToAI(model, prompt string) (string, error) {
 		Done     bool   `json:"done"`
 	}
 
-	// **优化 Prompt，告诉 AI 只返回最终客服回答**
 	instruct := `你是“阿亮餐厅”的 AI 客服，必须严格遵守以下规则：
-1️⃣ **始终保持专业、规范、礼貌的客服语气**。
-2️⃣ **使用敬语**（如：您好、请问、感谢您的光临、祝您用餐愉快等）。
-3️⃣ **禁止随意闲聊，必须围绕餐厅业务解答问题**。
-4️⃣ **如果用户询问订单，提醒用户可以通过 "查看订单" 获取最近订单**。
-5️⃣ **如果用户询问推荐菜品，提供 "推荐几道菜" 关键词来获取推荐菜**。
+1️ **始终保持专业、规范、礼貌的客服语气**。
+2️ **使用敬语**（如：您好、请问、感谢您的光临、祝您用餐愉快等）。
+3️ **禁止随意闲聊，必须围绕餐厅业务解答问题**。
+4️ **如果用户询问订单，提醒用户可以通过 "查看订单" 获取最近订单**。
+5️ **如果用户询问推荐菜品，提供 "推荐几道菜" 关键词来获取推荐菜**。
 
 请按照上述规则回答用户的问题：`
 
@@ -96,7 +95,6 @@ func SendToAI(model, prompt string) (string, error) {
 	return cleanedResponse, nil
 }
 
-// **清理 AI 响应，移除 <think>...</think> 部分**
 func cleanAIResponse(response string) string {
 	// 使用正则表达式删除 `<think>...</think>` 部分
 	re := regexp.MustCompile(`(?s)<think>.*?</think>`)

@@ -17,43 +17,13 @@ import (
 
 func updateOrder(c *gin.Context) {
 	type Req struct {
-		Code    string `json:"code" binding:"required"` // 订单编号
-		Status  int    `json:"status"`                  // 更新订单状态
-		Remark  string `json:"remark"`                  // 更新备注
-		Version int    `json:"version"`                 // 乐观锁版本号
+		Code   string `json:"code" binding:"required"` // 订单编号
+		Status int    `json:"status"`                  // 更新订单状态
+		Remark string `json:"remark"`                  // 更新备注
 	}
 
 	var req Req
 	if !utils.ValidationJson(c, &req) {
-		return
-	}
-
-	var o model.UserOrder
-	// 查找订单
-	if _, err := config.DB.Where("code = ?", req.Code).Get(&o); err != nil {
-		response.Success(c, response.QueryFail, fmt.Errorf("updateOrder error: %v", err))
-		return
-	}
-
-	// 允许的状态变更映射
-	validTransitions := map[int][]int{
-		1: {1, 2}, // 1 可以变成 1 或 2
-		2: {2, 3}, // 2 可以变成 2 或 3
-		3: {3},
-		4: {4},
-		5: {5, 4}, // 5 可以变成 5 或 4
-	}
-
-	// 检查是否允许该状态变更
-	allowed, exists := validTransitions[o.Status]
-	if !exists || !contains(allowed, req.Status) {
-		response.Success(c, response.UpdateFail, errors.New("订单状态不可更改"))
-		return
-	}
-
-	// 检查版本号是否一致
-	if o.Version != req.Version {
-		response.Success(c, response.UpdateFail, errors.New("数据已被其他操作修改"))
 		return
 	}
 
@@ -65,13 +35,43 @@ func updateOrder(c *gin.Context) {
 		return
 	}
 
-	// 构造更新模型
+	var o model.UserOrder
+
+	if _, err := session.Where("code = ?", req.Code).ForUpdate().Get(&o); err != nil {
+		_ = session.Rollback()
+		response.Success(c, response.QueryFail, fmt.Errorf("查询订单失败: %v", err))
+		return
+	}
+
+	// 如果订单不存在
+	if o.Code == "" {
+		_ = session.Rollback()
+		response.Success(c, response.UpdateFail, errors.New("订单不存在"))
+		return
+	}
+
+	// 允许的状态变更映射
+	validTransitions := map[int][]int{
+		1: {1, 2},
+		2: {2, 3},
+		3: {3},
+		4: {4},
+		5: {5, 4, 1},
+	}
+
+	// **检查是否允许该状态变更**
+	allowed, exists := validTransitions[o.Status]
+	if !exists || !contains(allowed, req.Status) {
+		_ = session.Rollback()
+		response.Success(c, response.UpdateFail, errors.New("订单状态不可更改"))
+		return
+	}
+
+	// **更新订单数据**
 	o.Status = req.Status
 	o.Remark = req.Remark
-	o.Version += 1
 	o.Updated = time.Now().Unix()
 
-	// 执行更新操作
 	if affectRow, err := session.Where("code = ?", req.Code).Update(&o); err != nil || affectRow != 1 {
 		_ = session.Rollback()
 		response.Success(c, response.UpdateFail, err)
@@ -85,7 +85,7 @@ func updateOrder(c *gin.Context) {
 		return
 	}
 
-	// 提交事务
+	// **提交事务**
 	if err := session.Commit(); err != nil {
 		_ = session.Rollback()
 		response.Success(c, response.ServerError, err)

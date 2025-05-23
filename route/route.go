@@ -11,10 +11,12 @@ import (
 	"rest/api/dashboard"
 	"rest/api/order"
 	"rest/api/pay"
+	"rest/api/permission"
 	"rest/api/product"
 	"rest/api/public"
 	"rest/api/role"
 	"rest/api/salary"
+	"rest/api/table"
 	"rest/api/user"
 	"rest/config"
 	"rest/model"
@@ -27,6 +29,7 @@ func registerRoutes(r *gin.Engine) {
 
 	// 注册用户 API
 	user.RegisterUserRoutes(apiGroup)
+	//user.RegisterUserRoutes(apiGroup)
 	category.RegisterCategoryRoutes(apiGroup)
 	public.RegisterPublicRoutes(apiGroup)
 	product.RegisterProductRoutes(apiGroup)
@@ -38,6 +41,8 @@ func registerRoutes(r *gin.Engine) {
 	dashboard.RegisterDashboardRoutes(apiGroup)
 	ai.RegisterAIRoutes(apiGroup)
 	pay.RegisterPayRoutes(apiGroup)
+	table.RegisterTableRoutes(apiGroup)
+	permission.RegisterPermissionRoutes(apiGroup)
 }
 
 func autoRegisterAPIPermissions(router *gin.Engine) {
@@ -81,6 +86,7 @@ func autoRegisterAPIPermissions(router *gin.Engine) {
 			Path:        &route.Path,
 			ParentCode:  &topLevelCode,
 			Description: fmt.Sprintf("处理函数: %s", methodName), // 将方法名加入 description
+
 		}
 
 		permissions = append(permissions, permission)

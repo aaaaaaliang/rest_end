@@ -31,6 +31,7 @@ func NewHub() *Hub {
 
 	return h
 }
+
 func (h *Hub) Run() {
 	for {
 		select {
@@ -42,7 +43,7 @@ func (h *Hub) Run() {
 				h.supportClients[client.userCode] = client
 				log.Println("客服用户在线:", client.userCode)
 			}
-			log.Println("当前在线用户数:", len(h.clients)) // 输出当前在线用户数
+			log.Println("当前在线用户数:", len(h.clients))
 
 		case client := <-h.unregister:
 			if _, ok := h.clients[client.userCode]; ok {
@@ -57,14 +58,14 @@ func (h *Hub) Run() {
 			}
 
 		case message := <-h.broadcast:
-			log.Println("ws 1")
+			log.Println("广播消息")
 			// 处理广播消息
 			for _, client := range h.clients {
 				msgBytes, _ := json.Marshal(message)
 				client.send <- msgBytes
 			}
 		case message := <-h.privateMsg:
-			log.Println("ws 2")
+			log.Println("私聊消息")
 			// 处理私聊消息
 			if client, ok := h.clients[message.ToUser]; ok {
 				msgBytes, _ := json.Marshal(message)

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"rest/config"
@@ -13,6 +12,8 @@ import (
 	"rest/response"
 	"rest/utils"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 func updateOrder(c *gin.Context) {
@@ -27,39 +28,36 @@ func updateOrder(c *gin.Context) {
 		return
 	}
 
-	// 开启事务
 	session := config.DB.NewSession()
 	defer session.Close()
+
 	if err := session.Begin(); err != nil {
 		response.Success(c, response.ServerError, err)
 		return
 	}
 
 	var o model.UserOrder
-
 	if _, err := session.Where("code = ?", req.Code).ForUpdate().Get(&o); err != nil {
 		_ = session.Rollback()
 		response.Success(c, response.QueryFail, fmt.Errorf("查询订单失败: %v", err))
 		return
 	}
 
-	// 如果订单不存在
 	if o.Code == "" {
 		_ = session.Rollback()
 		response.Success(c, response.UpdateFail, errors.New("订单不存在"))
 		return
 	}
 
-	// 允许的状态变更映射
+	// 状态变更规则
 	validTransitions := map[int][]int{
-		1: {1, 2},
-		2: {2, 3},
-		3: {3},
-		4: {4},
-		5: {5, 4, 1},
+		1: {1, 2, 4}, // 允许从未支付变为制作中、已取消
+		2: {2, 3},    // 制作中只能变完成
+		3: {3},       // 完成后不可改
+		4: {4},       // 已取消不可改
+		5: {5, 4, 1}, // 备用状态逻辑
 	}
 
-	// **检查是否允许该状态变更**
 	allowed, exists := validTransitions[o.Status]
 	if !exists || !contains(allowed, req.Status) {
 		_ = session.Rollback()
@@ -67,7 +65,26 @@ func updateOrder(c *gin.Context) {
 		return
 	}
 
-	// **更新订单数据**
+	// 如果是从 待支付（1） → 已取消（4） 则执行库存回补
+	if o.Status == 1 && req.Status == 4 {
+		var details []model.OrderDetail
+		if err := session.Where("order_code = ?", o.Code).Find(&details); err != nil {
+			_ = session.Rollback()
+			response.Success(c, response.ServerError, fmt.Errorf("查询订单明细失败: %v", err))
+			return
+		}
+
+		for _, d := range details {
+			_, err := session.Exec("UPDATE products SET count = count + ? WHERE code = ?", d.Quantity, d.ProductCode)
+			if err != nil {
+				_ = session.Rollback()
+				response.Success(c, response.UpdateFail, fmt.Errorf("库存回补失败: %v", err))
+				return
+			}
+		}
+	}
+
+	// 更新订单状态和备注
 	o.Status = req.Status
 	o.Remark = req.Remark
 	o.Updated = time.Now().Unix()
@@ -78,14 +95,12 @@ func updateOrder(c *gin.Context) {
 		return
 	}
 
-	// **同步更新到 Elasticsearch**
 	if err := updateOrderInES(&o); err != nil {
 		_ = session.Rollback()
 		response.Success(c, response.UpdateFail, fmt.Errorf("更新 Elasticsearch 失败: %v", err))
 		return
 	}
 
-	// **提交事务**
 	if err := session.Commit(); err != nil {
 		_ = session.Rollback()
 		response.Success(c, response.ServerError, err)
@@ -95,7 +110,7 @@ func updateOrder(c *gin.Context) {
 	response.Success(c, response.SuccessCode)
 }
 
-// contains 判断切片中是否包含某个值
+// 判断切片是否包含元素
 func contains(slice []int, value int) bool {
 	for _, v := range slice {
 		if v == value {
@@ -105,12 +120,9 @@ func contains(slice []int, value int) bool {
 	return false
 }
 
-// **更新 Elasticsearch 中的订单**
+// 更新订单状态至 Elasticsearch
 func updateOrderInES(order *model.UserOrder) error {
-	esURL := "http://localhost:9200/orders/_update/" + order.Code + "?refresh=wait_for"
-	//esURL := "http://localhost:9200/orders/_update/" + order.Code
-
-	// 构造更新数据
+	esURL := fmt.Sprintf("%s/orders/_update/%s?refresh=wait_for", config.G.ES.Url, order.Code)
 	updateData := map[string]interface{}{
 		"doc": map[string]interface{}{
 			"status":  order.Status,
@@ -120,13 +132,11 @@ func updateOrderInES(order *model.UserOrder) error {
 		},
 	}
 
-	// 转换为 JSON
 	jsonData, err := json.Marshal(updateData)
 	if err != nil {
 		return fmt.Errorf("JSON 编码失败: %v", err)
 	}
 
-	// 发送请求
 	req, _ := http.NewRequest("POST", esURL, bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}

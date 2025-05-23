@@ -5,6 +5,7 @@ import (
 	"rest/config"
 	"rest/model"
 	"rest/response"
+	"rest/utils"
 )
 
 // 给用户分配角色
@@ -15,8 +16,7 @@ func assignUserRoles(c *gin.Context) {
 	}
 
 	var req Req
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Success(c, response.BadRequest, err)
+	if ok := utils.ValidationJson(c, &req); !ok {
 		return
 	}
 

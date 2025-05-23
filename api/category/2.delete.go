@@ -8,6 +8,7 @@ import (
 	"rest/config"
 	"rest/model"
 	"rest/response"
+	"rest/utils"
 )
 
 // 删除分类及其所有子分类（包括子孙分类）
@@ -17,8 +18,7 @@ func deleteCategory(c *gin.Context) {
 	}
 
 	var req Req
-	if err := c.ShouldBindQuery(&req); err != nil {
-		response.Success(c, response.BadRequest, fmt.Errorf("%v \"参数错误\"", err))
+	if ok := utils.ValidationQuery(c, &req); !ok {
 		return
 	}
 
@@ -36,7 +36,7 @@ func deleteCategory(c *gin.Context) {
 	err := deleteCategoryAndChildren(session, req.Code)
 	if err != nil {
 		session.Rollback()
-		response.Success(c, response.DeleteFail, errors.New("删除分类及子分类失败"))
+		response.Success(c, response.DeleteFail, fmt.Errorf("删除分类及子分类失败 %v", err))
 		return
 	}
 
@@ -51,31 +51,35 @@ func deleteCategory(c *gin.Context) {
 	response.Success(c, response.SuccessCode)
 }
 
-// 递归删除分类及其所有子分类
+// 递归删除分类及其所有子分类（前提是没有产品引用）
 func deleteCategoryAndChildren(session *xorm.Session, code string) error {
-	// 删除当前分类
-	affectRow, err := session.Where("code = ?", code).Delete(&model.Category{})
-	if err != nil || affectRow != 1 {
-		return fmt.Errorf("删除当前分类失败: %v", err)
+	// 🛡️ 1. 检查是否有产品引用该分类
+	count, err := session.Where("category_code = ?", code).Count(new(model.Products))
+	if err != nil {
+		return fmt.Errorf("检查产品引用失败: %v", err)
+	}
+	if count > 0 {
+		return fmt.Errorf("分类已被 %d 个产品引用，无法删除", count)
 	}
 
-	// 查询当前分类下的所有子分类
+	// 📚 2. 查询当前分类的所有子分类
 	var children []model.Category
-	if err = session.Where("parent_code = ?", code).Find(&children); err != nil {
-		return errors.New("查询子分类失败: " + err.Error())
+	if err := session.Where("parent_code = ?", code).Find(&children); err != nil {
+		return fmt.Errorf("查询子分类失败: %v", err)
 	}
 
-	// 递归删除每一个子分类及其后代
+	// 🔁 3. 递归删除子分类
 	for _, child := range children {
-		if _, err = session.Where("code = ?", child.Code).Delete(&model.Category{}); err != nil {
-			return errors.New("删除子分类失败: " + err.Error())
-		}
-
-		// 递归删除子分类的子分类
-		err = deleteCategoryAndChildren(session, child.Code)
-		if err != nil {
+		if err := deleteCategoryAndChildren(session, child.Code); err != nil {
 			return err
 		}
 	}
+
+	// ❌ 4. 删除当前分类
+	affected, err := session.Where("code = ?", code).Delete(new(model.Category))
+	if err != nil || affected != 1 {
+		return fmt.Errorf("删除当前分类失败: %v", err)
+	}
+
 	return nil
 }

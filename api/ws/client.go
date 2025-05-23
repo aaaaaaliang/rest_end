@@ -59,9 +59,11 @@ func (c *Client) readPump() {
 			// **人工客服**
 			msg.FromUser = c.userCode
 			if msg.ToUser == "" {
+				log.Println("客服在线，广播消息给所有人")
 				c.hub.broadcast <- msg
 			} else {
 				if receiver, exists := c.hub.clients[msg.ToUser]; exists {
+					log.Println("客服发送消息给目标用户", msg.ToUser)
 					receiver.send <- []byte(msg.Content)
 				} else {
 					log.Println("目标用户不存在，无法发送消息：", msg.ToUser)

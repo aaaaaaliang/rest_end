@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/mojocn/base64Captcha"
-	"log"
 	"rest/config"
 	"rest/model"
 	"rest/response"
 	"rest/utils"
 )
 
-func createUser(c *gin.Context) {
+func registerUser(c *gin.Context) {
 	type Req struct {
 		Username        string `json:"username" binding:"required"`
 		Password        string `json:"password" binding:"required"`
@@ -22,8 +21,7 @@ func createUser(c *gin.Context) {
 	}
 
 	var req Req
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Success(c, response.BadRequest, err)
+	if ok := utils.ValidationJson(c, &req); !ok {
 		return
 	}
 
@@ -48,12 +46,8 @@ func createUser(c *gin.Context) {
 
 	// 检查用户名是否已存在
 	exist, err := config.DB.Table(model.Users{}).Where("username = ?", req.Username).Exist()
-	if err != nil {
-		response.Success(c, response.ServerError, err)
-		return
-	}
-	if exist {
-		response.Success(c, response.BadRequest, errors.New("用户已存在"))
+	if err != nil || exist {
+		response.Success(c, response.ServerError, fmt.Errorf("用户已存在或者发生错误%v", err))
 		return
 	}
 
@@ -62,7 +56,6 @@ func createUser(c *gin.Context) {
 		response.Success(c, response.ServerError, fmt.Errorf("创建用户失败: %v", err))
 		return
 	}
-
 	response.Success(c, response.SuccessCode)
 }
 
@@ -81,10 +74,16 @@ func createUsers(c *gin.Context) {
 	}
 
 	var req Req
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Success(c, response.BadRequest, err)
+	if ok := utils.ValidationJson(c, &req); !ok {
 		return
 	}
+	// 检查用户名是否已存在
+	exist, err := config.DB.Table(model.Users{}).Where("username = ?", req.Username).Exist()
+	if err != nil || exist {
+		response.Success(c, response.ServerError, fmt.Errorf("用户已存在或者发生错误%v", err))
+		return
+	}
+
 	if req.Password == "" {
 		req.Password = "111111"
 	}
@@ -96,14 +95,6 @@ func createUsers(c *gin.Context) {
 		return
 	}
 
-	exist, err := config.DB.Table(model.Users{}).Where("username = ?", req.Username).Exist()
-	if err != nil {
-		response.Success(c, response.QueryFail, err)
-		return
-	}
-	if exist {
-		response.Success(c, response.UserExists)
-	}
 	user := model.Users{
 		Username:   req.Username,
 		Password:   hashedPassword,
@@ -115,7 +106,6 @@ func createUsers(c *gin.Context) {
 		BaseSalary: req.BaseSalary,
 		IsEmployee: req.IsEmployee,
 	}
-	log.Println("user", user)
 
 	if _, err := config.DB.Insert(&user); err != nil {
 		response.Success(c, response.ServerError, err)
@@ -132,8 +122,7 @@ func getUserRoles(c *gin.Context) {
 	}
 
 	var req Req
-	if err := c.ShouldBindQuery(&req); err != nil {
-		response.Success(c, response.BadRequest, err)
+	if ok := utils.ValidationQuery(c, &req); !ok {
 		return
 	}
 

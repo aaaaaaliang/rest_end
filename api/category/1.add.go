@@ -5,6 +5,7 @@ import (
 	"rest/config"
 	"rest/model"
 	"rest/response"
+	"rest/utils"
 )
 
 // 新增分类
@@ -16,8 +17,7 @@ func createCategory(c *gin.Context) {
 	}
 
 	var req Req
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.SuccessWithData(c, response.BadRequest, err.Error())
+	if ok := utils.ValidationJson(c, &req); !ok {
 		return
 	}
 

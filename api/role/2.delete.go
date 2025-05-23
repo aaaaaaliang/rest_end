@@ -1,31 +1,44 @@
 package role
 
 import (
-	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"rest/config"
 	"rest/model"
 	"rest/response"
+	"rest/utils"
 )
 
 func deleteRole(c *gin.Context) {
 	type Req struct {
-		Code string `json:"code" binding:"required" form:"code"`
+		Code string `form:"code" binding:"required"`
 	}
 
 	var req Req
-	if err := c.ShouldBindQuery(&req); err != nil {
-		response.Success(c, response.BadRequest, err)
-		return
-	}
-	if req.Code == "admin" {
-		response.Success(c, response.DeleteFail, errors.New("admin 不能被删除"))
+	if ok := utils.ValidationQuery(c, &req); !ok {
 		return
 	}
 
-	affected, err := config.DB.Where("code = ?", req.Code).Delete(&model.Role{})
-	if err != nil || affected == 0 {
-		response.Success(c, response.DeleteFail, err)
+	// 1. 检查是否有用户关联该角色
+	count, err := config.DB.Where("role_code = ?", req.Code).Count(&model.UserRole{})
+	if err != nil {
+		response.Success(c, response.ServerError, err)
+		return
+	}
+	if count > 0 {
+		response.Success(c, response.DeleteFail, fmt.Errorf("该角色已分配给 %d 个用户，无法删除", count))
+		return
+	}
+
+	// 2. 删除角色权限
+	if _, err := config.DB.Where("role_code = ?", req.Code).Delete(&model.RolePermission{}); err != nil {
+		response.Success(c, response.ServerError, err)
+		return
+	}
+
+	// 3. 删除角色本身
+	if _, err := config.DB.Where("code = ?", req.Code).Delete(&model.Role{}); err != nil {
+		response.Success(c, response.ServerError, err)
 		return
 	}
 
@@ -39,8 +52,7 @@ func removeRolePermission(c *gin.Context) {
 	}
 
 	var req Req
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Success(c, response.BadRequest, err)
+	if ok := utils.ValidationJson(c, &req); !ok {
 		return
 	}
 

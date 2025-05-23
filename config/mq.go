@@ -47,21 +47,40 @@ func GetRabbitMQChannel() (*amqp.Channel, error) {
 	return MQConn.Channel() // 每次调用返回一个新的 Channel
 }
 
-// 初始化延时队列
+// 初始化延时队列及其死信机制
 func setupDelayQueue(ch *amqp.Channel) error {
-	// 声明死信交换机（比如 order_timeout_exchange）
-	err := ch.ExchangeDeclare("order_timeout_exchange", "direct", true, false, false, false, nil)
+
+	// 1️⃣ 声明一个死信交换机（用于接收延时队列中过期的消息）
+	//    类型使用 direct，支持按 routing key 精确投递
+	err := ch.ExchangeDeclare(
+		"order_timeout_exchange", // 交换机名称
+		"direct",                 // 交换机类型（直连）
+		true,                     // 持久化
+		false,                    // 无绑定队列时不自动删除
+		false,                    // 非内部交换机
+		false,                    // 等待服务器确认
+		nil,                      // 无额外参数
+	)
 	if err != nil {
 		return fmt.Errorf("声明死信交换机失败: %v", err)
 	}
 
-	// 声明延时队列，设置 TTL 为 30 分钟（1800000 毫秒），并绑定死信交换机
+	// 2️⃣ 声明延时队列（用于临时存放新订单消息）
+	//    设置消息 TTL（存活时间），超过时间则自动过期
+	//    并指定死信交换机与 routing key，用于处理过期后的消息
 	args := amqp.Table{
-		"x-message-ttl":             int32(900000), // 15分钟过期
-		"x-dead-letter-exchange":    "order_timeout_exchange",
-		"x-dead-letter-routing-key": "order_timeout",
+		"x-message-ttl":             int32(900000),            // 消息 TTL：15分钟（单位毫秒）
+		"x-dead-letter-exchange":    "order_timeout_exchange", // 过期后将消息发送到哪个交换机
+		"x-dead-letter-routing-key": "order_timeout",          // 转发时使用的路由键
 	}
-	_, err = ch.QueueDeclare("order_delay_queue", true, false, false, false, args)
+	_, err = ch.QueueDeclare(
+		"order_delay_queue", // 队列名称
+		true,                // 持久化
+		false,               // 不自动删除
+		false,               // 不独占
+		false,               // 等待服务器响应
+		args,                // 附加参数（TTL + 死信配置）
+	)
 	if err != nil {
 		return fmt.Errorf("声明延时队列失败: %v", err)
 	}

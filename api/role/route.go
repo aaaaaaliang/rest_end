@@ -14,5 +14,4 @@ func RegisterRoleRoutes(group *gin.RouterGroup) {
 	group.POST("/role/assign", assignRolePermissions)      // 给角色分配权限
 	group.DELETE("/role/permission", removeRolePermission) // 移除角色的某个权限
 	group.GET("/role/public", getPublicPermissions)
-
 }

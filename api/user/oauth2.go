@@ -132,7 +132,11 @@ func githubCallback(c *gin.Context) {
 
 		// 然后再查用户code
 		var u model.Users
-		_, _ = config.DB.Where("username = ?", username).Get(&u)
+		_, err = config.DB.Where("username = ?", username).Get(&u)
+		if err != nil {
+			response.Success(c, response.ServerError, fmt.Errorf("GitHub用户存储失败: %v", err))
+			return
+		}
 		userInfo.Code = u.Code
 	}
 

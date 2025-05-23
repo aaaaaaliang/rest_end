@@ -7,6 +7,4 @@ func RegisterCategoryRoutes(group *gin.RouterGroup) {
 	group.DELETE("/category", deleteCategory)
 	group.PUT("/category", updateCategory)
 	group.GET("/category", listAllCategories)
-	//group.GET("/list", r.List)
-	// 其他购物车相关路由...
 }

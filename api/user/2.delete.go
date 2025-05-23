@@ -5,6 +5,7 @@ import (
 	"rest/config"
 	"rest/model"
 	"rest/response"
+	"rest/utils"
 )
 
 // 删除用户
@@ -14,8 +15,7 @@ func deleteUser(c *gin.Context) {
 	}
 
 	var req Req
-	if err := c.ShouldBindQuery(&req); err != nil {
-		response.Success(c, response.BadRequest, err)
+	if ok := utils.ValidationQuery(c, &req); !ok {
 		return
 	}
 

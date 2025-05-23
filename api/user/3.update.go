@@ -24,10 +24,10 @@ func updateUser(c *gin.Context) {
 	}
 
 	var req Req
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Success(c, response.BadRequest, err)
+	if ok := utils.ValidationJson(c, &req); !ok {
 		return
 	}
+
 	if req.Code == "admin" {
 		response.Success(c, response.UpdateFail, errors.New("超级管理员不允许修改"))
 		return

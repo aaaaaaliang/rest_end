@@ -16,8 +16,7 @@ func deleteCart(c *gin.Context) {
 	}
 
 	var req Req
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Success(c, response.BadRequest, err)
+	if !utils.ValidationJson(c, &req) {
 		return
 	}
 

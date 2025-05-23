@@ -27,15 +27,15 @@ func saveOrderToES(order *model.UserOrder) error {
 		"order_detail": []map[string]interface{}{},
 	}
 
-	for _, detail := range order.OrderDetail {
-		orderData["order_detail"] = append(orderData["order_detail"].([]map[string]interface{}), map[string]interface{}{
-			"product_code": detail.ProductCode,
-			"product_name": detail.ProductName,
-			"quantity":     detail.Quantity,
-			"price":        detail.Price,
-			"picture":      detail.Picture,
-		})
-	}
+	//for _, detail := range order.OrderDetail {
+	//	orderData["order_detail"] = append(orderData["order_detail"].([]map[string]interface{}), map[string]interface{}{
+	//		"product_code": detail.ProductCode,
+	//		"product_name": detail.ProductName,
+	//		"quantity":     detail.Quantity,
+	//		"price":        detail.Price,
+	//		"picture":      detail.Picture,
+	//	})
+	//}
 	jsonData, err := json.Marshal(orderData)
 	if err != nil {
 		return fmt.Errorf("JSON 编码失败: %v", err)

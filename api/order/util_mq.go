@@ -48,7 +48,7 @@ func publishDelayOrder(order *model.UserOrder) error {
 	defer func(ch *amqp.Channel) {
 		err := ch.Close()
 		if err != nil {
-			log.Fatalf("Failed to close RabbitMQ channel")
+			log.Fatalf("Failed to close RabbitMQ channel %v", err)
 		}
 	}(ch)
 
@@ -139,24 +139,53 @@ func ConsumeTimeoutMessages() {
 			_ = msg.Nack(false, false)
 			continue
 		}
-		// 检查订单状态，如果状态为待支付（5），则更新状态
-		if order.Status == 5 {
-			// 此处调用更新订单状态的逻辑，比如更新为取消或超时状态
+
+		// 检查订单状态是否为待支付（1）
+		if order.Status == 1 {
+			// 1. 更新订单状态为取消
 			if err := updateOrderStatus(order.Code, 4); err != nil {
 				log.Printf("更新订单状态失败: %v", err)
 				_ = msg.Nack(false, true)
 				continue
 			}
+
+			// 2. 查询订单明细
+			var details []model.OrderDetail
+			if err := config.DB.Where("order_code = ?", order.Code).Find(&details); err != nil {
+				log.Printf("查询订单明细失败: %v", err)
+				_ = msg.Nack(false, true)
+				continue
+			}
+
+			// 3. 回补库存
+			for _, d := range details {
+				_, err := config.DB.Exec(
+					"UPDATE products SET count = count + ? WHERE code = ?", d.Quantity, d.ProductCode,
+				)
+				if err != nil {
+					log.Printf("商品 %s 库存回补失败: %v", d.ProductCode, err)
+					_ = msg.Nack(false, true)
+					continue
+				}
+			}
+
+			// 4. 更新 ES 状态
+			order.Status = 4 // 已取消
 			err := updateOrderInES(&order)
 			if err != nil {
 				log.Printf("更新 Elasticsearch 失败: %v", err)
-				return
+				_ = msg.Nack(false, true)
+				continue
 			}
-			log.Printf("订单 %s 已超时取消", order.Code)
+
+			log.Printf("✅ 订单 %s 已超时取消，库存已回补", order.Code)
 		}
+
+		// 消息处理成功
 		_ = msg.Ack(false)
 	}
 }
+
 func updateOrderStatus(orderCode string, newStatus int) error {
 	_, err := config.DB.Table(model.UserOrder{}).Where("code = ?", orderCode).Update(map[string]interface{}{
 		"status": newStatus,

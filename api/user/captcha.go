@@ -15,8 +15,6 @@ func generateCaptcha(c *gin.Context) {
 		Captcha string `json:"captcha"`
 	}
 
-	//ctx := context.Background()
-
 	// **创建验证码**
 	driver := base64Captcha.NewDriverDigit(80, 240, 5, 0.7, 80)
 	captcha := base64Captcha.NewCaptcha(driver, base64Captcha.DefaultMemStore)
@@ -27,14 +25,6 @@ func generateCaptcha(c *gin.Context) {
 		response.Success(c, response.ServerError, errors.New("生成验证码失败"))
 		return
 	}
-
-	//// **存入 Redis，验证码 5 分钟有效**
-	//captchaKey := fmt.Sprintf("captcha:%s", id)
-	//err = config.R.Set(ctx, captchaKey, id, 5*time.Minute).Err()
-	//if err != nil {
-	//	response.Success(c, response.ServerError, errors.New("存储验证码失败"))
-	//	return
-	//}
 
 	res := CaptchaRes{
 		Id:      id,

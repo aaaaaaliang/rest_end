@@ -23,6 +23,7 @@ func main() {
 		&model.Products{},
 		&model.UserCart{},
 		&model.UserOrder{},
+		&model.OrderDetail{},
 		&model.Banner{},
 		&model.APIPermission{},
 		&model.Role{},
@@ -30,6 +31,7 @@ func main() {
 		&model.UserRole{},
 		&model.SalaryRecord{},
 		&model.ChatMessage{},
+		&model.TableInfo{},
 	); err != nil {
 		log.Fatal(err)
 	}

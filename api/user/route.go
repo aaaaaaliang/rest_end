@@ -4,7 +4,7 @@ import "github.com/gin-gonic/gin"
 
 func RegisterUserRoutes(group *gin.RouterGroup) {
 	// 创建用户
-	group.POST("/user", createUser)
+	group.POST("/user", registerUser)
 
 	// 生成验证码
 	group.GET("/user/captcha", generateCaptcha)
@@ -33,8 +33,8 @@ func RegisterUserRoutes(group *gin.RouterGroup) {
 	// 重置用户密码
 	group.PUT("/user/reset", resetUserPassword)
 
-	// 查询用户列表
 	group.GET("/user/list", listUsers)
+	group.GET("/user/employee/list", listEmployees)
 
 	// 给用户分配角色
 	group.POST("/user/assign", assignUserRoles)

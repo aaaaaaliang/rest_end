@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/mojocn/base64Captcha"
 	"rest/config"
@@ -19,11 +20,9 @@ func login(c *gin.Context) {
 	}
 
 	var req Req
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Success(c, response.BadRequest, err)
+	if ok := utils.ValidationJson(c, &req); !ok {
 		return
 	}
-
 	// 使用 base64Captcha 默认存储进行验证码验证
 	if !base64Captcha.DefaultMemStore.Verify(req.CaptchaID, req.CaptchaSolution, true) {
 		response.Success(c, response.BadRequest, errors.New("验证码错误"))
@@ -32,13 +31,9 @@ func login(c *gin.Context) {
 
 	// 查询用户
 	var user model.Users
-	has, err := config.DB.Table(model.Users{}).Where("username = ?", req.Username).Get(&user)
-	if err != nil {
-		response.Success(c, response.ServerError, err)
-		return
-	}
-	if !has {
-		response.Success(c, response.Unauthorized, errors.New("用户名或密码错误"))
+	has, err := config.DB.Where("username = ?", req.Username).Get(&user)
+	if err != nil || !has {
+		response.Success(c, response.ServerError, fmt.Errorf("用户名或密码错误或者发生%v", err))
 		return
 	}
 

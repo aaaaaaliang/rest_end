@@ -7,7 +7,7 @@ type APIPermission struct {
 	Method      *string `json:"method" xorm:"varchar(10) null"` // 可为空，顶级分类不需要 HTTP 方法
 	Path        *string `json:"path" xorm:"varchar(255) null"`  // 可为空，顶级分类不需要 API 路径
 	Description string  `json:"description" xorm:"varchar(255)"`
-	Public      int     `json:"public" xorm:"tinyint(1) default(0)"` // 默认值 0，表示公开
+	Public      int     `json:"public" xorm:"tinyint(1) default(0)"` // 0: 公开，1: 登录可访问，2: 角色授权访问
 }
 
 func (a *APIPermission) TableName() string {

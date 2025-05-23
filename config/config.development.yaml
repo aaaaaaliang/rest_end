@@ -53,7 +53,7 @@ cors:
 
 
 uploads:
-  url: "C:\\Users\\aliang\\Desktop\\rest-end - 副本\\uploads"
+  url: "http://localhost:8888"
 
 redis:
   host: "localhost"

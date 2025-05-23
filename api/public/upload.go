@@ -83,13 +83,14 @@ func uploadFile(c *gin.Context) {
 		return
 	}
 
-	url := fmt.Sprintf("%s", config.G.Uploads.Url)
+	// 设置可访问的 URL
+	url := fmt.Sprintf("%s/uploads/%s", config.G.Uploads.Url, fileName)
 
 	// 返回成功信息
 	response.SuccessWithData(c, response.SuccessCode, gin.H{
-		"filename": file.Filename,                       // 原始文件名
-		"filepath": savePath,                            // 服务器存储路径
-		"url":      fmt.Sprintf("%s/%s", url, fileName), // 访问 URL
+		"filename": file.Filename, // 原始文件名
+		"filepath": savePath,      // 服务器存储路径
+		"url":      url,           // 返回可访问的 URL
 	})
 }
 

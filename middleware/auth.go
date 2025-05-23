@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
-	"log"
 	"rest/config"
 	"rest/model"
 	"rest/response"
@@ -17,64 +16,66 @@ import (
 
 func PermissionMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := context.Background() // 创建新的上下文
+		ctx := context.Background()
 
 		apiPath := c.Request.URL.Path
 		method := c.Request.Method
 
-		// **1. 查询 API 是否为公共接口**
+		// 1️⃣ 查询接口权限定义
 		var apiPermission model.APIPermission
 		has, err := config.DB.Where("path = ? AND method = ?", apiPath, method).Get(&apiPermission)
 		if err != nil {
-			response.Success(c, response.Unauthorized, errors.New("权限查询失败"))
+			response.Success(c, response.Unauthorized, fmt.Errorf("查询权限失败: %v", err))
 			c.Abort()
 			return
 		}
 
-		// **如果 API 记录不存在，或者 public == 0，直接放行**
+		// 2️⃣ 如果未配置该接口权限，或配置为公开接口（public == 0） => 放行
 		if !has || apiPermission.Public == 0 {
 			c.Next()
 			return
 		}
 
-		// **2. 从 Cookie 获取 Token**
+		// 3️⃣ 从 cookie 获取 access_token
 		token, err := c.Cookie("access_token")
 		if err != nil {
-			response.Success(c, response.Unauthorized, fmt.Errorf("未登录 %v", err))
+			response.Success(c, response.Unauthorized, fmt.Errorf("未登录: %v", err))
 			c.Abort()
 			return
 		}
-		log.Println("access_token", token)
 
-		// **3. 解析 Token 获取 user_code**
+		// 4️⃣ 解析 token 获取 user_code
 		userCode, err := config.ParseJWT(token)
 		if err != nil || userCode == "" {
-			response.Success(c, response.Unauthorized, fmt.Errorf("用户code未拿到 %v", err))
+			response.Success(c, response.Unauthorized, fmt.Errorf("token 解析失败: %v", err))
 			c.Abort()
 			return
 		}
 		c.Set("user", userCode)
 
-		// **5. 处理登录 API**
-		if apiPermission.Public == 1 {
-			// **public == 1 表示只需要登录即可访问**
+		// ✅ 超级管理员拥有所有权限
+		if userCode == "admin" {
 			c.Next()
 			return
 		}
 
-		// **4. 查询用户的权限，先查 Redis**
+		// 5️⃣ 如果只要求登录（public == 1）=> 登录用户已校验，直接放行
+		if apiPermission.Public == 1 {
+			c.Next()
+			return
+		}
+
+		// 6️⃣ public == 2，角色授权 => 查缓存 or 数据库
+		cacheKey := fmt.Sprintf("user_permissions:%s", userCode)
+		val, err := config.R.Get(ctx, cacheKey).Result()
+
 		var userPermissions []struct {
 			Path   string `xorm:"path"`
 			Method string `xorm:"method"`
 		}
 
-		// 尝试从 Redis 获取缓存的权限
-		cacheKey := fmt.Sprintf("user_permissions:%s", userCode)
-		val, err := config.R.Get(ctx, cacheKey).Result()
-
 		if errors.Is(err, redis.Nil) {
-			// Redis 中没有缓存，查询数据库并缓存到 Redis
-			log.Println("a1")
+			// Redis 无缓存，查 DB
 			err = config.DB.Table(model.UserRole{}).Alias("ur").
 				Join("INNER", []interface{}{model.RolePermission{}, "rp"}, "ur.role_code = rp.role_code").
 				Join("INNER", []interface{}{model.APIPermission{}, "p"}, "rp.permission_code = p.code").
@@ -85,35 +86,23 @@ func PermissionMiddleware() gin.HandlerFunc {
 				Find(&userPermissions)
 
 			if err != nil {
-				response.Success(c, response.Unauthorized, fmt.Errorf("权限查询失败 %v", err))
+				response.Success(c, response.Unauthorized, fmt.Errorf("权限加载失败: %v", err))
 				c.Abort()
 				return
 			}
 
-			// 将用户权限数据缓存到 Redis 中（有效期 1 小时）
-			permissionsData, _ := json.Marshal(userPermissions)
-			err = config.R.Set(ctx, cacheKey, permissionsData, time.Hour).Err()
-			if err != nil {
-				log.Println("缓存权限失败:", err)
-			}
-
-		} else if err != nil {
-			// 读取 Redis 错误
-			response.Success(c, response.Unauthorized, fmt.Errorf("读取缓存失败 %v", err))
+			// 缓存 1 小时
+			cacheData, _ := json.Marshal(userPermissions)
+			_ = config.R.Set(ctx, cacheKey, cacheData, time.Hour).Err()
+		} else if err == nil {
+			_ = json.Unmarshal([]byte(val), &userPermissions)
+		} else {
+			response.Success(c, response.Unauthorized, fmt.Errorf("读取权限缓存失败: %v", err))
 			c.Abort()
 			return
-		} else {
-			log.Println("a2")
-			// Redis 中有缓存，直接解析缓存数据
-			err = json.Unmarshal([]byte(val), &userPermissions)
-			if err != nil {
-				response.Success(c, response.Unauthorized, fmt.Errorf("解析缓存数据失败 %v", err))
-				c.Abort()
-				return
-			}
 		}
 
-		// **5. 处理 API 路径匹配**
+		// 7️⃣ 权限比对
 		allowed := false
 		for _, perm := range userPermissions {
 			if perm.Path == apiPath && strings.EqualFold(perm.Method, method) {
@@ -122,14 +111,13 @@ func PermissionMiddleware() gin.HandlerFunc {
 			}
 		}
 
-		// **6. 没有权限，返回 403**
 		if !allowed {
 			response.Success(c, response.Unauthorized, fmt.Errorf("无访问权限"))
 			c.Abort()
 			return
 		}
 
-		// **7. 通过权限校验，继续处理请求**
+		// ✅ 允许访问
 		c.Next()
 	}
 }

@@ -18,12 +18,40 @@ func loadData() {
 
 // StartDataSyncTask 启动定时任务，定期同步数据库数据到 Redis
 func startDataSyncTask() {
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
 		log.Println("Starting scheduled data sync to Redis...")
 		syncDataToRedis()
+		syncSeckillCouponStockToRedis()
+	}
+}
+
+// SyncSeckillCouponStockToRedis 同步所有秒杀券库存到 Redis（适合定时任务）
+func syncSeckillCouponStockToRedis() {
+	ctx := context.Background()
+
+	var templates []model.CouponTemplate
+	err := config.DB.Where("grant_type = ? AND status = 1", "seckill").Find(&templates)
+	if err != nil {
+		log.Printf("❌ 查询秒杀券模板失败: %v", err)
+		return
+	}
+
+	pipe := config.R.Pipeline()
+	for _, tpl := range templates {
+		remain := tpl.Total - tpl.Received
+		if remain < 0 {
+			remain = 0
+		}
+		stockKey := fmt.Sprintf("coupon:stock:%s", tpl.Code)
+		pipe.Set(ctx, stockKey, remain, 0)
+	}
+	if _, err := pipe.Exec(ctx); err != nil {
+		log.Printf("❌ Redis 批量写入库存失败: %v", err)
+	} else {
+		log.Printf("✅ Redis 同步秒杀券库存成功，共 %d 条", len(templates))
 	}
 }
 

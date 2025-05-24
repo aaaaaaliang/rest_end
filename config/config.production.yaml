@@ -81,4 +81,4 @@ mq:
   url: "localhost:5672"
 
 es:
-  url: "http://localhost:9200/orders/_doc/"
+  url: "http://localhost:9200"

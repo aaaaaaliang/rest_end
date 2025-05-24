@@ -8,6 +8,7 @@ import (
 	"rest/api/banner"
 	"rest/api/cart"
 	"rest/api/category"
+	"rest/api/coupon"
 	"rest/api/dashboard"
 	"rest/api/order"
 	"rest/api/pay"
@@ -43,6 +44,7 @@ func registerRoutes(r *gin.Engine) {
 	pay.RegisterPayRoutes(apiGroup)
 	table.RegisterTableRoutes(apiGroup)
 	permission.RegisterPermissionRoutes(apiGroup)
+	coupon.RegisterCouponTemplateRoutes(apiGroup)
 }
 
 func autoRegisterAPIPermissions(router *gin.Engine) {

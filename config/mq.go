@@ -99,5 +99,16 @@ func setupTimeoutQueue(ch *amqp.Channel) error {
 	if err != nil {
 		return fmt.Errorf("绑定死信队列失败: %v", err)
 	}
+
+	// 声明 coupon 超时处理队列
+	_, err = ch.QueueDeclare("coupon_timeout_queue", true, false, false, false, nil)
+	if err != nil {
+		return fmt.Errorf("声明 coupon_timeout_queue 失败: %v", err)
+	}
+	err = ch.QueueBind("coupon_timeout_queue", "coupon_timeout", "order_timeout_exchange", false, nil)
+	if err != nil {
+		return fmt.Errorf("绑定 coupon_timeout_queue 失败: %v", err)
+	}
+
 	return nil
 }

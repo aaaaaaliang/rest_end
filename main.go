@@ -3,6 +3,7 @@ package main
 import (
 	_ "github.com/go-sql-driver/mysql"
 	"log"
+	"rest/api/coupon"
 	"rest/api/order"
 	"rest/config"
 	"rest/model"
@@ -32,6 +33,8 @@ func main() {
 		&model.SalaryRecord{},
 		&model.ChatMessage{},
 		&model.TableInfo{},
+		&model.CouponTemplate{},
+		&model.UserCoupon{},
 	); err != nil {
 		log.Fatal(err)
 	}
@@ -39,6 +42,7 @@ func main() {
 	// 启动消费者后台 Goroutine
 	go order.ConsumeOrderMessages()
 	go order.ConsumeTimeoutMessages()
+	coupon.StartCouponConsumer()
 	// **初始化 Gin 服务器**
 	r := route.InitServer()
 

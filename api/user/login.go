@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -9,6 +10,7 @@ import (
 	"rest/model"
 	"rest/response"
 	"rest/utils"
+	"time"
 )
 
 func login(c *gin.Context) {
@@ -52,6 +54,21 @@ func login(c *gin.Context) {
 
 	// 设置 Cookie
 	c.SetCookie("access_token", token, 3600, "/", "", false, true)
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("⚠️ 发券协程崩溃: %v\n", r)
+			}
+		}()
+
+		// 发券加超时控制
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		// 实际发券
+		grantLoginCoupons(ctx, user.Code)
+	}()
 
 	// 登录成功
 	response.Success(c, response.SuccessCode)

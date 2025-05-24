@@ -2,6 +2,7 @@ package order
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/streadway/amqp"
 	"log"
@@ -17,7 +18,7 @@ func publishMessage(queueName string, message []byte) error {
 	defer func(ch *amqp.Channel) {
 		err := ch.Close()
 		if err != nil {
-			log.Fatalf("Failed to close RabbitMQ channel")
+			log.Fatalf("Failed to close RabbitMQ channel %v", err)
 		}
 	}(ch) // ✅ 用完就关闭 Channel，防止并发冲突
 
@@ -73,9 +74,10 @@ func ConsumeOrderMessages() {
 		log.Fatalf("❌ 获取 RabbitMQ Channel 失败: %v", err)
 	}
 	defer func(ch *amqp.Channel) {
-		err := ch.Close()
-		if err != nil {
-			log.Fatalf("Failed to close RabbitMQ channel")
+		if ch != nil {
+			if err := ch.Close(); err != nil && !errors.Is(err, amqp.ErrClosed) {
+				log.Printf("⚠️ 关闭 RabbitMQ channel 失败: %v", err)
+			}
 		}
 	}(ch)
 

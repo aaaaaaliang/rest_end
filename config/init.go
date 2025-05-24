@@ -9,6 +9,6 @@ func InitConfig() {
 		InitDB()
 		InitRedis()
 		InitMQ()
-
+		InitES()
 	})
 }

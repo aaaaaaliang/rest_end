@@ -10,5 +10,6 @@ func InitConfig() {
 		InitRedis()
 		InitMQ()
 		InitES()
+		InitLogger()
 	})
 }

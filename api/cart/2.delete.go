@@ -9,7 +9,7 @@ import (
 	"rest/utils"
 )
 
-// DeleteCart 删除购物车项
+// 删除购物车项
 func deleteCart(c *gin.Context) {
 	type Req struct {
 		Code []string `json:"code" binding:"required"`

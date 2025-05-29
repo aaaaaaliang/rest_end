@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
-	"rest/api/ws"
 	"rest/config"
 	"rest/middleware"
 )
@@ -22,12 +21,12 @@ func InitServer() *gin.Engine {
 
 	// **注册 API 路由**
 	registerRoutes(r)
-	hub := ws.NewHub()
+	//hub := ws.NewHub()
 	//// **监听系统信号，优雅退出**
-	r.GET("/api/ws", func(c *gin.Context) {
-		log.Println("Received WebSocket connection request")
-		ws.ServeWs(hub, c)
-	})
+	//r.GET("/api/ws", func(c *gin.Context) {
+	//	log.Println("Received WebSocket connection request")
+	//	ws.ServeWs(hub, c)
+	//})
 
 	// **自动注册 API 权限**
 	autoRegisterAPIPermissions(r)
@@ -36,7 +35,8 @@ func InitServer() *gin.Engine {
 
 // loadMiddlewares 统一加载所有中间件
 func loadMiddlewares(r *gin.Engine) {
-	r.Use(middleware.Cors())                 // 跨域
+	r.Use(middleware.Cors()) // 跨域
+	r.Use(middleware.GinLogger(config.Log))
 	r.Use(middleware.PermissionMiddleware()) // 权限控制
 
 	// 静态文件目录（如图片/上传文件）

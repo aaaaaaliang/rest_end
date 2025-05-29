@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
-	"rest/api/ai"
+	aiv1admin "rest/api/ai/v1/admin"
+	aiv1user "rest/api/ai/v1/user"
 	"rest/api/banner"
 	"rest/api/cart"
 	"rest/api/category"
@@ -19,6 +20,7 @@ import (
 	"rest/api/salary"
 	"rest/api/table"
 	"rest/api/user"
+	handler "rest/api/ws/v1"
 	"rest/config"
 	"rest/model"
 	"strings"
@@ -30,7 +32,6 @@ func registerRoutes(r *gin.Engine) {
 
 	// 注册用户 API
 	user.RegisterUserRoutes(apiGroup)
-	//user.RegisterUserRoutes(apiGroup)
 	category.RegisterCategoryRoutes(apiGroup)
 	public.RegisterPublicRoutes(apiGroup)
 	product.RegisterProductRoutes(apiGroup)
@@ -40,11 +41,13 @@ func registerRoutes(r *gin.Engine) {
 	role.RegisterRoleRoutes(apiGroup)
 	salary.RegisterSalaryRoutes(apiGroup)
 	dashboard.RegisterDashboardRoutes(apiGroup)
-	ai.RegisterAIRoutes(apiGroup)
 	pay.RegisterPayRoutes(apiGroup)
 	table.RegisterTableRoutes(apiGroup)
 	permission.RegisterPermissionRoutes(apiGroup)
 	coupon.RegisterCouponTemplateRoutes(apiGroup)
+	handler.RegisterWSRoutes(apiGroup)
+	aiv1admin.RegisterAIModelRoutes(apiGroup)
+	aiv1user.RegisterAIUserRoutes(apiGroup)
 }
 
 func autoRegisterAPIPermissions(router *gin.Engine) {

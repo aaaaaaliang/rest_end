@@ -26,7 +26,7 @@ func addOrder(c *gin.Context) {
 		Details             []model.OrderDetail `json:"details" binding:"required"`
 		Remark              string              `json:"remark"`
 		CouponCode          string              `json:"coupon_code"`           // 新增：优惠券 code（user_coupon 表）
-		ClientPayableAmount float64             `json:"client_payable_amount"` // 🆕 前端传入的最终支付金额
+		ClientPayableAmount float64             `json:"client_payable_amount"` // 前端传入的最终支付金额
 	}
 
 	var req Req

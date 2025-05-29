@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// 创建券模板并初始化库存
+// 创建优惠券券模板
 func createCouponTemplate(c *gin.Context) {
 	type CreateCouponTemplateReq struct {
 		Name      string  `json:"name" binding:"required"`
@@ -25,7 +25,6 @@ func createCouponTemplate(c *gin.Context) {
 		StartTime int64   `json:"start_time"`
 		EndTime   int64   `json:"end_time"`
 	}
-
 	var req CreateCouponTemplateReq
 	if !utils.ValidationJson(c, &req) {
 		return
@@ -80,21 +79,20 @@ func receiveCoupon(c *gin.Context) {
 	if !utils.ValidationJson(c, &req) {
 		return
 	}
-
 	userCode := utils.GetUser(c)
 
 	// 查询券模板
 	var tpl model.CouponTemplate
 	has, err := config.DB.Where("code = ? AND grant_type = ? AND status = 1", req.TemplateCode, "manual").Get(&tpl)
 	if err != nil || !has {
-		response.Success(c, response.BadRequest, errors.New("券模板不存在或不可领取"))
+		response.Success(c, response.BadRequest, fmt.Errorf("券模板不存在或不可领取 %v", err))
 		return
 	}
 
 	// 检查是否已领取
-	exist, _ := config.DB.Where("user_code = ? AND template_code = ?", userCode, tpl.Code).Exist(new(model.UserCoupon))
-	if exist {
-		response.Success(c, response.ServerError, errors.New("不可重复领取"))
+	exist, err := config.DB.Where("user_code = ? AND template_code = ?", userCode, tpl.Code).Exist(new(model.UserCoupon))
+	if exist || err != nil {
+		response.Success(c, response.ServerError, fmt.Errorf("不可重复领取 或 %v", err))
 		return
 	}
 
@@ -127,7 +125,12 @@ func receiveCoupon(c *gin.Context) {
 
 	// 同步扣减库存：received +1，total -1
 	res, err := session.Exec("UPDATE coupon_template SET received = received + 1, total = total - 1 WHERE code = ? AND received < total", tpl.Code)
-	af, _ := res.RowsAffected()
+	if err != nil {
+		_ = session.Rollback()
+		response.Success(c, response.ServerError, fmt.Errorf("扣减库存 %v", err))
+		return
+	}
+	af, err := res.RowsAffected()
 	if err != nil || af == 0 {
 		_ = session.Rollback()
 		response.Success(c, response.ServerError, errors.New("库存不足"))

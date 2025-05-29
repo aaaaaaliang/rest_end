@@ -96,6 +96,5 @@ func countTodayOrders(c *gin.Context) {
 		Products:    stats,
 		DailySales:  dailySales,
 	}
-
 	response.SuccessWithData(c, response.SuccessCode, res)
 }

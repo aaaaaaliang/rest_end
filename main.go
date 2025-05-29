@@ -35,6 +35,9 @@ func main() {
 		&model.TableInfo{},
 		&model.CouponTemplate{},
 		&model.UserCoupon{},
+		&model.AIModelConfig{},
+		&model.AIChatHistory{},
+		&model.AIChatSession{},
 	); err != nil {
 		log.Fatal(err)
 	}

@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// addCart 简化后的购物车逻辑
+// 添加购物车
 func addCart(c *gin.Context) {
 	type Req struct {
 		ProductCode string `json:"product_code" binding:"required"`

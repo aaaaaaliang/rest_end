@@ -12,5 +12,4 @@ func RegisterCouponTemplateRoutes(group *gin.RouterGroup) {
 	group.GET("/coupon/list", listAllCoupons)              // 所有券 + 拥有标记
 	group.POST("/coupon/seckill/receive", seckillCoupon)   // 秒杀券
 	group.GET("/coupon/seckill", getUserCoupons)
-
 }

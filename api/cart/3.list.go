@@ -11,13 +11,13 @@ import (
 
 func listCart(c *gin.Context) {
 	type Req struct {
-		Index int `form:"index" json:"index" binding:"required,min=1"`       // 当前页码
-		Size  int `form:"size" json:"size" binding:"required,min=1,max=100"` // 每页条数
+		Index int `form:"index" json:"index" binding:"required,min=1"`
+		Size  int `form:"size" json:"size" binding:"required,min=1,max=100"`
 	}
 
 	type Annex struct {
 		Code string `json:"code"` // 图片 URL
-		Name string `json:"name"` // 图片名称
+		Name string `json:"name"`
 	}
 
 	type Res struct {
@@ -59,7 +59,6 @@ func listCart(c *gin.Context) {
 		return
 	}
 
-	// 解析 `picture` JSON 字符串
 	var res []Res
 	for _, item := range rawRes {
 		var picture Annex
@@ -77,6 +76,5 @@ func listCart(c *gin.Context) {
 		})
 	}
 
-	// 返回分页结果
 	response.SuccessWithTotal(c, response.SuccessCode, res, int(count))
 }

@@ -8,9 +8,8 @@ import (
 	"rest/response"
 )
 
-// 查询所有分类及其子分类（树形结构）
+// 查询所有分类及其子分类
 func listAllCategories(c *gin.Context) {
-	// 获取所有分类数据
 	var categories []model.Category
 	err := config.DB.Find(&categories)
 	if err != nil {
@@ -18,14 +17,12 @@ func listAllCategories(c *gin.Context) {
 		return
 	}
 
-	// 将所有分类组织成树形结构
 	categoryTree, err := buildCategoryTree(categories)
 	if err != nil {
 		response.Success(c, response.QueryFail, errors.New("构建分类树失败"))
 		return
 	}
 
-	// 返回分类树
 	response.SuccessWithData(c, response.SuccessCode, categoryTree)
 }
 

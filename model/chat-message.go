@@ -1,15 +1,10 @@
 package model
 
+// ChatMessage 聊天消息
 type ChatMessage struct {
-	Id              int64  `json:"id" xorm:"pk autoincr"`
-	FromUser        string `json:"from_user"`
-	ToUser          string `json:"to_user,omitempty"`
-	Content         string `json:"content"`
-	Timestamp       int64  `json:"timestamp"`
-	Type            string `json:"type"`
-	IsHandled       bool   `json:"is_handled"`
-	Read            bool   `json:"read"`
-	SupportUserCode string `json:"support_user_code,omitempty"`
-	Status          string `json:"status,omitempty"`
-	Role            string `json:"role,omitempty"` // 可选字段，用于存储角色
+	BasicModel  `xorm:"extends"`
+	SessionCode string `xorm:"varchar(70) notnull comment('会话code')" json:"session_code"` // 用于关联 ChatSession
+	SenderCode  string `xorm:"varchar(70) notnull comment('发送方code')" json:"sender_code"` // 顾客或客服的 code
+	SenderType  string `xorm:"varchar(20) notnull comment('发送方类型：customer/agent')" json:"sender_type"`
+	Content     string `xorm:"text notnull comment('聊天内容')" json:"content"`
 }

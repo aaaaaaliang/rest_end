@@ -3,6 +3,7 @@ module rest
 go 1.23.1
 
 require (
+	github.com/elastic/go-elasticsearch/v8 v8.18.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-pay/gopay v1.5.109
 	github.com/go-pay/xlog v0.0.3
@@ -13,9 +14,11 @@ require (
 	github.com/mojocn/base64Captcha v1.3.1
 	github.com/redis/go-redis/v9 v9.3.0
 	github.com/spf13/viper v1.19.0
+	github.com/streadway/amqp v1.1.0
 	github.com/xormplus/xorm v0.0.0-20210822100304-4e1d4fcc1e67
 	golang.org/x/crypto v0.33.0
 	golang.org/x/oauth2 v0.18.0
+
 )
 
 require (
@@ -23,6 +26,7 @@ require (
 	github.com/Chronokeeper/anyxml v0.0.0-20160530174208-54457d8e98c6 // indirect
 	github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53 // indirect
 	github.com/CloudyKit/jet v2.1.2+incompatible // indirect
+	github.com/aaaaaaliang/xlog v0.1.1 // indirect
 	github.com/agrison/go-tablib v0.0.0-20160310143025-4930582c22ee // indirect
 	github.com/agrison/mxj v0.0.0-20160310142625-1269f8afb3b4 // indirect
 	github.com/bndr/gotabulate v1.1.2 // indirect
@@ -34,7 +38,6 @@ require (
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.7.0 // indirect
-	github.com/elastic/go-elasticsearch/v8 v8.18.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
@@ -67,7 +70,6 @@ require (
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/streadway/amqp v1.1.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/tealeg/xlsx v1.0.5 // indirect

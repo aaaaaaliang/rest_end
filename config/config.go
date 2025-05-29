@@ -14,14 +14,14 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Redis    RedisConfig    `mapstructure:"redis"`
 	JWT      JWTConfig      `mapstructure:"jwt"`
-	Log      LogConfig      `mapstructure:"log"`
-	Oauth2   Oauth2Config   `mapstructure:"oauth2"` // Oauth2的结构体
-	Cors     CorsConfig     `mapstructure:"cors"`   // CORS 配置
-	Uploads  UploadConfig   `mapstructure:"uploads"`
-	AI       AIConfig       `mapstructure:"ai"`
-	Pay      PayConfig      `mapstructure:"pay"`
-	MQ       MqConfig       `mapstructure:"mq"`
-	ES       ESConfig       `mapstructure:"es"`
+	//Log      LogConfig      `mapstructure:"log"`
+	Oauth2  Oauth2Config `mapstructure:"oauth2"` // Oauth2的结构体
+	Cors    CorsConfig   `mapstructure:"cors"`   // CORS 配置
+	Uploads UploadConfig `mapstructure:"uploads"`
+	AI      AIConfig     `mapstructure:"ai"`
+	Pay     PayConfig    `mapstructure:"pay"`
+	MQ      MqConfig     `mapstructure:"mq"`
+	ES      ESConfig     `mapstructure:"es"`
 }
 
 // G 全局配置

@@ -5,6 +5,7 @@ import (
 	"rest/config"
 	"rest/model"
 	"rest/response"
+	"rest/utils"
 )
 
 // 更新分类
@@ -16,8 +17,7 @@ func updateCategory(c *gin.Context) {
 	}
 
 	var req Req
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.SuccessWithData(c, response.BadRequest, err.Error())
+	if ok := utils.ValidationJson(c, &req); !ok {
 		return
 	}
 

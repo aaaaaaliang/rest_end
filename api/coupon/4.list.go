@@ -80,7 +80,7 @@ func listAllCoupons(c *gin.Context) {
 	response.SuccessWithData(c, response.SuccessCode, result)
 }
 
-// 查询当前用户的所有优惠券（包含状态）
+// 查询当前用户的所有优惠
 func getUserCoupons(c *gin.Context) {
 	userCode := utils.GetUser(c)
 

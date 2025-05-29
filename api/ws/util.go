@@ -1,7 +1,6 @@
 package ws
 
 import (
-	"encoding/json"
 	"fmt"
 	"rest/config"
 	"rest/model"
@@ -121,11 +120,11 @@ func containsKeywords(text string, keywords []string) bool {
 	return false
 }
 
-func sendAIResponse(c *Client, content string) {
-	aiResponse, _ := json.Marshal(map[string]string{
-		"type":      "chat",
-		"content":   content,
-		"from_user": "AI",
-	})
-	c.send <- aiResponse
-}
+//func sendAIResponse(c *Client, content string) {
+//	aiResponse, _ := json.Marshal(map[string]string{
+//		"type":      "chat",
+//		"content":   content,
+//		"from_user": "AI",
+//	})
+//	c.send <- aiResponse
+//}

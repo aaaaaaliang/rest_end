@@ -1,32 +1,26 @@
 package config
 
 import (
-	"log"
 	"os"
+	xlog "rest/utils"
 )
 
-// LogConfig 日志配置
-type LogConfig struct {
-	Level      string `mapstructure:"level"`
-	File       string `mapstructure:"file"`
-	MaxSize    int    `mapstructure:"max_size"`
-	MaxBackups int    `mapstructure:"max_backups"`
-	MaxAge     int    `mapstructure:"max_age"`
-}
+var Log xlog.Logger
 
-// InitLogger **初始化日志系统**
 func InitLogger() {
-	logConfig := G.Log
-
-	// 创建日志文件
-	logFile, err := os.OpenFile(logConfig.File, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		log.Fatalf("❌ 日志文件创建失败: %v", err)
+	Log = xlog.New("rest-api")
+	// 设置日志格式
+	if os.Getenv("ENV") == "prod" {
+		Log.SetFormat(xlog.FormatJSON)
+	} else {
+		Log.SetFormat(xlog.FormatText)
 	}
+	// 设置日志级别
+	Log.SetLevel(xlog.LevelDebug)
 
-	// 设置日志输出到文件
-	log.SetOutput(logFile)
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-
-	log.Println("✔️ 日志系统初始化成功")
+	//输出到文件
+	//f, err := os.OpenFile("logs/app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	//if err == nil {
+	//	Log.SetOutput(f)
+	//}
 }

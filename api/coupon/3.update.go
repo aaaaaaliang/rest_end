@@ -105,7 +105,7 @@ func seckillCoupon(c *gin.Context) {
 		response.Success(c, response.ServerError, errors.New("优惠券已被抢光"))
 		return
 	case 1:
-		// 秒杀成功 → 写入 MQ（base64 JSON）
+		// 秒杀成功 → 写入 MQ
 		body, _ := json.Marshal(map[string]string{
 			"user_code":     userCode,
 			"template_code": req.TemplateCode,
@@ -123,7 +123,6 @@ func seckillCoupon(c *gin.Context) {
 			}
 		}(ch)
 
-		log.Println("！！！！！！！！！！！！！！！！encoded:", encoded)
 		err = ch.Publish(
 			"order_timeout_exchange", // 指定交换机
 			"coupon_timeout",         // coupon 专属 routing key

@@ -14,7 +14,7 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Redis    RedisConfig    `mapstructure:"redis"`
 	JWT      JWTConfig      `mapstructure:"jwt"`
-	//Log      LogConfig      `mapstructure:"log"`
+	//Log      LogConfig      `mapstructure:"logger"`
 	Oauth2  Oauth2Config `mapstructure:"oauth2"` // Oauth2的结构体
 	Cors    CorsConfig   `mapstructure:"cors"`   // CORS 配置
 	Uploads UploadConfig `mapstructure:"uploads"`

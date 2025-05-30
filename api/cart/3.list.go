@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"rest/config"
+	"rest/logger"
 	"rest/model"
 	"rest/response"
 	"rest/utils"
@@ -55,6 +56,12 @@ func listCart(c *gin.Context) {
 		FindAndCount(&rawRes)
 
 	if err != nil {
+		logger.SendLogToESCtx(c.Request.Context(), "ERROR", "cart", "error", "cart.list.query_fail", map[string]interface{}{
+			"user_code": userCode,
+			"index":     req.Index,
+			"size":      req.Size,
+			"err":       err.Error(),
+		})
 		response.Success(c, response.ServerError, err)
 		return
 	}
@@ -75,6 +82,14 @@ func listCart(c *gin.Context) {
 			Picture:      picture,
 		})
 	}
+
+	// ✅ 日志记录查询成功
+	logger.SendLogToESCtx(c.Request.Context(), "INFO", "cart", "operation", "cart.list.success", map[string]interface{}{
+		"user_code": userCode,
+		"index":     req.Index,
+		"size":      req.Size,
+		"count":     count,
+	})
 
 	response.SuccessWithTotal(c, response.SuccessCode, res, int(count))
 }

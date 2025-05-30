@@ -1,6 +1,8 @@
 package config
 
-import "sync"
+import (
+	"sync"
+)
 
 var once sync.Once
 
@@ -10,6 +12,5 @@ func InitConfig() {
 		InitRedis()
 		InitMQ()
 		InitES()
-		InitLogger()
 	})
 }

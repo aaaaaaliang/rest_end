@@ -6,6 +6,7 @@ import (
 	"rest/api/coupon"
 	"rest/api/order"
 	"rest/config"
+	"rest/logger"
 	"rest/model"
 	"rest/route"
 )
@@ -15,6 +16,7 @@ func main() {
 	config.LoadConfig()
 	// **初始化配置**
 	config.InitConfig()
+	logger.InitLogger()
 	config.InitJWT()
 
 	// **创建数据库表**

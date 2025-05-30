@@ -1,18 +1,22 @@
 package middleware
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
-	"rest/utils"
+	"rest/logger"
 	"time"
 )
 
-func GinLogger(log utils.Logger) gin.HandlerFunc {
+func GinLogger(log logger.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
-		traceID := utils.NewTraceID()
-		ctx := utils.WithTraceID(c.Request.Context(), traceID)
+		traceID := logger.NewTraceID()
+		ctx := logger.WithTraceID(c.Request.Context(), traceID)
 		c.Request = c.Request.WithContext(ctx)
 		c.Set("trace_id", traceID)
+
+		ctx = context.WithValue(ctx, "gin_context", c)
+		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()
 

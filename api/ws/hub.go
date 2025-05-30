@@ -35,9 +35,9 @@ package ws
 //			if client.isSupport {
 //				// 如果是客服，添加到 supportClients 中
 //				h.supportClients[client.userCode] = client
-//				log.Println("客服用户在线:", client.userCode)
+//				logger.Println("客服用户在线:", client.userCode)
 //			}
-//			log.Println("当前在线用户数:", len(h.clients))
+//			logger.Println("当前在线用户数:", len(h.clients))
 //
 //		case client := <-h.unregister:
 //			if _, ok := h.clients[client.userCode]; ok {
@@ -46,20 +46,20 @@ package ws
 //				if client.isSupport {
 //					// 如果是客服，移除客服列表
 //					delete(h.supportClients, client.userCode)
-//					log.Println("客服用户下线:", client.userCode)
+//					logger.Println("客服用户下线:", client.userCode)
 //				}
 //				close(client.send)
 //			}
 //
 //		case message := <-h.broadcast:
-//			log.Println("广播消息")
+//			logger.Println("广播消息")
 //			// 处理广播消息
 //			for _, client := range h.clients {
 //				msgBytes, _ := json.Marshal(message)
 //				client.send <- msgBytes
 //			}
 //		case message := <-h.privateMsg:
-//			log.Println("私聊消息")
+//			logger.Println("私聊消息")
 //			// 处理私聊消息
 //			if client, ok := h.clients[message.ToUser]; ok {
 //				msgBytes, _ := json.Marshal(message)

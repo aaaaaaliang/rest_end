@@ -14,7 +14,7 @@ package ws
 //	// 查询用户的角色
 //	exist, err := config.DB.Table(model.Users{}).Where("code = ? AND is_employee = 1", userCode).Exist()
 //	if err != nil {
-//		log.Println("isSupport 查询用户角色失败:", err)
+//		logger.Println("isSupport 查询用户角色失败:", err)
 //		return false
 //	}
 //	return exist
@@ -42,7 +42,7 @@ package ws
 //	// 升级 HTTP 连接为 WebSocket
 //	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 //	if err != nil {
-//		log.Println("WebSocket 升级失败:", err)
+//		logger.Println("WebSocket 升级失败:", err)
 //		return
 //	}
 //

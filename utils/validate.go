@@ -2,8 +2,8 @@ package utils
 
 import (
 	"errors"
-	"fmt"
 	"github.com/gin-gonic/gin"
+	"rest/logger"
 	"rest/response"
 	"strings"
 )
@@ -11,52 +11,48 @@ import (
 // ValidationQuery 校验 URL 查询参数
 func ValidationQuery(c *gin.Context, d any) (success bool) {
 	err := c.ShouldBindQuery(d)
-	if err != nil && strings.Contains(err.Error(), "required") {
-		response.Success(c, response.NotFound, err)
-		success = false
-		return
-	}
-	if err != nil && strings.Contains(err.Error(), "validation") {
-		response.Success(c, response.BadRequest, err)
-		success = false
-		return
-	}
 	if err != nil {
-		response.Success(c, response.BadRequest, err)
-		success = false
-		return
+		logValidationError(c, "query", err, d)
+		status := response.BadRequest
+		if strings.Contains(err.Error(), "required") {
+			status = response.NotFound
+		}
+		response.Success(c, status, err)
+		return false
 	}
-	success = true
-	return
+	return true
 }
 
 // ValidationJson 校验 JSON 数据
 func ValidationJson(c *gin.Context, d any) (success bool) {
-	// 先检查请求体是否为空
 	if c.Request.Body == nil {
-		response.Success(c, response.BadRequest, errors.New("请求体为空"))
-		success = false
-		return
+		msg := "请求体为空"
+		logger.SendLogToESCtx(c.Request.Context(), "WARN", "validation", "error", "json.empty_body", nil)
+		response.Success(c, response.BadRequest, errors.New(msg))
+		return false
 	}
 
 	err := c.ShouldBindJSON(d)
-	if err != nil && strings.Contains(err.Error(), "required") {
-		response.Success(c, response.NotFound, err)
-		success = false
-		return
-	}
-	if err != nil && strings.Contains(err.Error(), "validation") {
-		response.Success(c, response.BadRequest, err)
-		success = false
-		return
-	}
 	if err != nil {
-		fmt.Println("err:", err)
-		response.Success(c, response.BadRequest, err)
-		success = false
-		return
+		logValidationError(c, "json", err, d)
+		status := response.BadRequest
+		if strings.Contains(err.Error(), "required") {
+			status = response.NotFound
+		}
+		response.Success(c, status, err)
+		return false
 	}
 
-	success = true
-	return
+	return true
+}
+
+// logValidationError 写入校验失败日志
+func logValidationError(c *gin.Context, source string, err error, req any) {
+	logger.SendLogToESCtx(c.Request.Context(), "WARN", "validation", "error", "param.validation_fail", map[string]interface{}{
+		"source": source,      // json / query
+		"error":  err.Error(), // 具体错误信息
+		"req":    req,         // 结构体内容
+		"path":   c.Request.URL.Path,
+		"method": c.Request.Method,
+	})
 }

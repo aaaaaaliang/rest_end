@@ -24,14 +24,14 @@ package ws
 //	for {
 //		_, message, err := c.conn.ReadMessage()
 //		if err != nil {
-//			log.Println("读取消息失败：", err)
+//			logger.Println("读取消息失败：", err)
 //			break
 //		}
-//		log.Println("收到消息:", string(message))
+//		logger.Println("收到消息:", string(message))
 //
 //		var msg model.ChatMessage
 //		if err := json.Unmarshal(message, &msg); err != nil {
-//			log.Println("消息解析失败:", err)
+//			logger.Println("消息解析失败:", err)
 //			continue
 //		}
 //
@@ -50,14 +50,14 @@ package ws
 //			// **人工客服**
 //			msg.FromUser = c.userCode
 //			if msg.ToUser == "" {
-//				log.Println("客服在线，广播消息给所有人")
+//				logger.Println("客服在线，广播消息给所有人")
 //				c.hub.broadcast <- msg
 //			} else {
 //				if receiver, exists := c.hub.clients[msg.ToUser]; exists {
-//					log.Println("客服发送消息给目标用户", msg.ToUser)
+//					logger.Println("客服发送消息给目标用户", msg.ToUser)
 //					receiver.send <- []byte(msg.Content)
 //				} else {
-//					log.Println("目标用户不存在，无法发送消息：", msg.ToUser)
+//					logger.Println("目标用户不存在，无法发送消息：", msg.ToUser)
 //				}
 //			}
 //		} else {

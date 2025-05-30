@@ -51,7 +51,7 @@ func InitDB() {
 
 	// **Ping 数据库，确保连接可用**
 	if err := engine.Ping(); err != nil {
-		//log.Fatalf("❌ 数据库连接测试失败: %v", err)
+		//logger.Fatalf("❌ 数据库连接测试失败: %v", err)
 		log.Printf("❌ 数据库连接测试失败: %v", err)
 	}
 

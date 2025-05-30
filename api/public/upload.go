@@ -15,7 +15,7 @@ import (
 //	// 获取上传的文件
 //	file, err := c.FormFile("file")
 //	if err != nil {
-//		log.Println("文件获取失败:", err)
+//		logger.Println("文件获取失败:", err)
 //		response.Success(c, response.BadRequest, fmt.Errorf("获取上传文件失败: %v", err))
 //		return
 //	}
@@ -33,7 +33,7 @@ import (
 //
 //	// 保存文件
 //	if err := c.SaveUploadedFile(file, savePath); err != nil {
-//		log.Println("文件保存失败:", err)
+//		logger.Println("文件保存失败:", err)
 //		response.Success(c, response.ServerError, fmt.Errorf("文件保存失败: %v", err))
 //		return
 //	}

@@ -11,6 +11,7 @@ import (
 	"rest/api/category"
 	"rest/api/coupon"
 	"rest/api/dashboard"
+	l "rest/api/log"
 	"rest/api/order"
 	"rest/api/pay"
 	"rest/api/permission"
@@ -48,6 +49,7 @@ func registerRoutes(r *gin.Engine) {
 	handler.RegisterWSRoutes(apiGroup)
 	aiv1admin.RegisterAIModelRoutes(apiGroup)
 	aiv1user.RegisterAIUserRoutes(apiGroup)
+	l.RegisterLogRoutes(apiGroup)
 }
 
 func autoRegisterAPIPermissions(router *gin.Engine) {

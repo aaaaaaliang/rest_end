@@ -25,7 +25,7 @@ jwt:
 
 log:
   level: "debug"      # 日志级别（debug, info, warn, error, fatal）
-  file: "logs/app.log" # 日志文件路径
+  file: "logs/app.logger" # 日志文件路径
   max_size: 10        # 日志文件最大大小（MB）
   max_backups: 3      # 最多保留的旧日志文件数
   max_age: 7         # 日志最长保留天数
